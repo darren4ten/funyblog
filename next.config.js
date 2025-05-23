@@ -11,6 +11,12 @@ const nextConfig = {
       },
     ],
   },
+  webpack: (config) => {
+    return config
+  },
+  experimental: {
+    allowDynamicServerAttributes: true
+  }
 }
 
 module.exports = nextConfig 

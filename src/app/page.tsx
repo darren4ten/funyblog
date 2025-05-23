@@ -1,17 +1,28 @@
 import Banner from '@/components/Banner'
 import PostCard from '@/components/PostCard'
 import Sidebar from '@/components/Sidebar'
-import Navbar from '@/components/Navbar'
+import { D1Database, D1Result } from '@cloudflare/workers-types'
 
 interface Post {
   id: number
   title: string
   content: string
   slug: string
-  author: {
-    name: string
-    avatar: string
-  }
+  author_name: string
+  author_avatar: string
+  created_at: string
+  likes: number
+  views: number
+  comments_count: number
+}
+
+interface D1QueryResult {
+  id: number
+  title: string
+  content: string
+  slug: string
+  author_name: string
+  author_avatar: string
   created_at: string
   likes: number
   views: number
@@ -24,38 +35,72 @@ interface Category {
   count: number
 }
 
+// 后备数据
+const FALLBACK_POSTS: Post[] = [
+  {
+    id: 1,
+    title: "Hello World!",
+    content: "Welcome to my blog! This is the first post.",
+    slug: "hello-world",
+    author_name: "Admin",
+    author_avatar: "/images/default-avatar.png",
+    created_at: new Date().toISOString(),
+    likes: 0,
+    views: 0,
+    comments_count: 0
+  },
+  {
+    id: 2,
+    title: "Getting Started with Next.js",
+    content: "Next.js is a powerful framework for building React applications...",
+    slug: "getting-started-nextjs",
+    author_name: "Admin",
+    author_avatar: "/images/default-avatar.png",
+    created_at: new Date().toISOString(),
+    likes: 0,
+    views: 0,
+    comments_count: 0
+  }
+]
+
 async function getPosts(): Promise<Post[]> {
-  // 这里将来会从 Cloudflare D1 获取数据
-  return [
-    {
-      id: 1,
-      title: 'Hello World',
-      content: '欢迎使用我们的博客系统！这是第一篇文章。',
-      slug: 'hello-world',
-      author: {
-        name: 'Administrator',
-        avatar: 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp'
-      },
-      created_at: '2025-05-18',
-      likes: 0,
-      views: 0,
-      comments_count: 2
-    },
-    {
-      id: 2,
-      title: 'Markdown 教程',
-      content: '这是一篇关于 Markdown 的基础教程...',
-      slug: 'markdown-tutorial',
-      author: {
-        name: 'Administrator',
-        avatar: 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp'
-      },
-      created_at: '2025-05-18',
-      likes: 9,
-      views: 2,
-      comments_count: 1
+  try {
+    const db = globalThis.DB as D1Database | undefined
+
+    // 检查是否在 Cloudflare Pages 环境中
+    if (!db) {
+      console.log('Running in development mode, using fallback data')
+      return FALLBACK_POSTS
     }
-  ]
+
+    const result = await db.prepare(`
+      SELECT 
+        p.id,
+        p.title,
+        p.content,
+        p.slug,
+        p.created_at,
+        p.views,
+        p.likes,
+        u.name as author_name,
+        u.avatar as author_avatar,
+        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
+      FROM posts p
+      LEFT JOIN users u ON p.author_id = u.id
+      ORDER BY p.created_at DESC
+      LIMIT 10
+    `).all<D1QueryResult>()
+
+    if (!result?.results?.length) {
+      console.log('No posts found, using fallback data')
+      return FALLBACK_POSTS
+    }
+
+    return result.results
+  } catch (error) {
+    console.error('Error fetching posts:', error)
+    return FALLBACK_POSTS
+  }
 }
 
 async function getCategories(): Promise<Category[]> {
@@ -92,7 +137,9 @@ const posts = [
   }
 ]
 
-export default function Home() {
+export default async function Home() {
+  const posts = await getPosts()
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Banner />
@@ -100,8 +147,20 @@ export default function Home() {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-[calc(100%-320px)]">
             <div className="space-y-6">
-              {posts.map((post, index) => (
-                <PostCard key={post.slug} {...post} />
+              {posts.map((post) => (
+                <div key={post.slug}>
+                  <PostCard
+                    title={post.title}
+                    excerpt={post.content.substring(0, 200) + '...'}
+                    date={new Date(post.created_at).toLocaleDateString('zh-CN')}
+                    views={post.views}
+                    likes={post.likes}
+                    comments={post.comments_count}
+                    author={post.author_name}
+                    category="Uncategorized"
+                    slug={post.slug}
+                  />
+                </div>
               ))}
             </div>
           </div>

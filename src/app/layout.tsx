@@ -15,9 +15,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh-CN">
-      <body className={inter.className}>
-        {children}
+    <html lang="zh-CN" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        <div suppressHydrationWarning>
+          {children}
+        </div>
         <footer className="bg-gray-800 text-white py-6">
           <div className="container mx-auto px-4 text-center">
             <p>COPYRIGHT © 2025 潘离在线. ALL RIGHTS RESERVED.</p>

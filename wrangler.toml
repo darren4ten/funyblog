@@ -1,0 +1,21 @@
+name = "funyblog"
+main = "src/worker.ts"
+compatibility_date = "2025-05-18"
+
+# 开发环境配置
+[dev]
+port = 3000
+
+# D1 数据库配置
+[[d1_databases]]
+binding = "DB"
+database_name = "funyblog"
+database_id = "your-database-id"  # 需要替换为实际的数据库 ID
+
+# 静态资源配置
+[site]
+bucket = "./public"
+
+# 环境变量
+[vars]
+ENVIRONMENT = "production" 

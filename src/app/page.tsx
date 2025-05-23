@@ -96,16 +96,20 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100">
       <Banner />
-      <main className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          <div className="lg:w-2/3 space-y-8">
-            {posts.map((post, index) => (
-              <PostCard key={post.slug} {...post} />
-            ))}
+          <div className="lg:w-[calc(100%-320px)]">
+            <div className="space-y-6">
+              {posts.map((post, index) => (
+                <PostCard key={post.slug} {...post} />
+              ))}
+            </div>
           </div>
-          <Sidebar />
+          <div className="lg:w-[320px] flex-shrink-0">
+            <Sidebar />
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 } 

@@ -1,6 +1,6 @@
 name = "funyblog"
 main = "src/worker.ts"
-compatibility_date = "2025-05-18"
+compatibility_date = "2024-01-01"
 
 # 开发环境配置
 [dev]
@@ -10,7 +10,7 @@ port = 3000
 [[d1_databases]]
 binding = "DB"
 database_name = "funyblog"
-database_id = "your-database-id"  # 需要替换为实际的数据库 ID
+database_id = "84acc967-5fe4-4068-86e2-1418618a0b89"
 
 # 静态资源配置
 [site]

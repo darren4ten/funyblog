@@ -13,14 +13,16 @@ interface PostPageProps {
 export default function PostPage({ params }: PostPageProps) {
   // 模拟文章数据
   const post = {
-    title: "cowabi.com申请首年免域名和主机",
-    content: "访问Cowabi.com，开启首年免费域名和主机，注意需要绑定信用卡。第一步，访问网站注册 第二步，添加WordPress站点 注意,不要切中文，切中文看不到控制面板，...",
+    title: "Hello world!",
+    content: "Welcome to WordPress. This is your first post. Edit or delete it, then start writing!",
     date: "18 5 月, 2025",
-    views: 0,
-    likes: 0,
-    comments: 0,
+    views: 12,
+    likes: 2,
+    comments: 2,
     author: "admin",
-    category: "Uncategorized"
+    category: "Uncategorized",
+    tags: ["暂无"],
+    lastModified: "18 5 月, 2025"
   }
 
   return (
@@ -30,13 +32,20 @@ export default function PostPage({ params }: PostPageProps) {
         <div className="flex flex-col lg:flex-row gap-8">
           <article className="lg:w-[calc(100%-320px)]">
             <div className="bg-white rounded-lg p-8 mb-8">
-              <div className="mb-6">
+              {/* 面包屑导航 */}
+              <div className="flex items-center gap-2 text-sm mb-6">
+                <Link href="/" className="text-gray-600 hover:text-blue-600">
+                  首页
+                </Link>
+                <span className="text-gray-400">/</span>
                 <Link 
                   href={`/category/${post.category.toLowerCase()}`}
-                  className="bg-blue-500 text-white text-sm px-4 py-1 rounded-full hover:bg-blue-600 transition-colors"
+                  className="text-gray-600 hover:text-blue-600"
                 >
                   {post.category}
                 </Link>
+                <span className="text-gray-400">/</span>
+                <span className="text-gray-900">正文</span>
               </div>
               <h1 className="text-3xl font-bold mb-6">{post.title}</h1>
               <div className="flex items-center gap-6 text-gray-500 text-sm mb-8">
@@ -73,6 +82,25 @@ export default function PostPage({ params }: PostPageProps) {
               </div>
               <div className="prose max-w-none">
                 <p>{post.content}</p>
+              </div>
+
+              {/* 文章底部信息 */}
+              <div className="flex flex-wrap items-center justify-between pt-6 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <span>标签：</span>
+                  {post.tags.map((tag, index) => (
+                    <Link
+                      key={index}
+                      href={`/tag/${tag}`}
+                      className="bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+                </div>
+                <div className="text-sm text-gray-500">
+                  最后更新：{post.lastModified}
+                </div>
               </div>
             </div>
 

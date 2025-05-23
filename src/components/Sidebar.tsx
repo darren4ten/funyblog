@@ -46,24 +46,6 @@ export default function Sidebar({
 }: SidebarProps) {
   return (
     <div className="space-y-6">
-      {/* 搜索框 */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-bold mb-4">搜索</h2>
-        <form className="flex" onSubmit={(e) => e.preventDefault()}>
-          <input
-            type="text"
-            placeholder="搜索..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-l focus:outline-none focus:border-blue-500"
-          />
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-r hover:bg-blue-700 transition-colors"
-          >
-            搜索
-          </button>
-        </form>
-      </div>
-
       {/* 最近文章 */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-lg font-bold mb-4">Recent Posts</h2>

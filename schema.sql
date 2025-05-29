@@ -85,8 +85,23 @@ CREATE TABLE IF NOT EXISTS comments (
   FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE SET NULL
 );
 
+-- 站点设置表 - 存储站点相关设置信息
+CREATE TABLE IF NOT EXISTS site_settings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,    -- 设置ID
+  site_title TEXT NOT NULL,                -- 站点标题
+  site_subtitle TEXT,                      -- 站点副标题
+  footer_main_content TEXT,                -- 页脚主内容
+  footer_subtitle TEXT,                    -- 页脚副标题
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP   -- 更新时间
+);
+
 -- 插入测试数据
 -- 用户数据
+-- 插入站点设置测试数据
+INSERT INTO site_settings (site_title, site_subtitle, footer_main_content, footer_subtitle) VALUES
+('我的博客', '分享技术与生活', '© 2025 我的博客. 保留所有权利.', '由 Cloudflare 提供支持');
+
 INSERT INTO users (username, nickname, email, password_hash, avatar_url, bio, role) VALUES
 ('admin', '管理员', 'admin@example.com', 'hashed_password', 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp', '分享技术与生活', 'admin');
 

@@ -201,6 +201,21 @@ app.post('/api/posts/:slug/like', async (c: Context<{ Bindings: Bindings }>) => 
   return c.json({ message: 'Post liked successfully' })
 })
 
+// 获取站点设置
+app.get('/api/site-settings', async (c: Context<{ Bindings: Bindings }>) => {
+  const settings = await c.env.DB.prepare(`
+    SELECT site_title, site_subtitle, footer_main_content, footer_subtitle
+    FROM site_settings
+    LIMIT 1
+  `).first()
+  
+  if (!settings) {
+    return c.json({ error: 'Site settings not found' }, 404)
+  }
+  
+  return c.json(settings)
+})
+
 export default {
   fetch: (req: Request, env: any, ctx: any) => {
     return app.fetch(req, env, ctx);

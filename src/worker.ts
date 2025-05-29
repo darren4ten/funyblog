@@ -26,13 +26,12 @@ app.get('/api/posts', async (c: Context<{ Bindings: Bindings }>) => {
   const offset = (Number(page) - 1) * Number(limit)
 
   const posts = await c.env.DB.prepare(`
-    SELECT 
+    SELECT
       p.id, p.title, p.content, p.slug, p.created_at, p.views, p.likes,
       u.username as author_name, u.avatar_url as author_avatar,
-      COUNT(DISTINCT c.id) as comments_count
+      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
     FROM posts p
     LEFT JOIN users u ON p.author_id = u.id
-    LEFT JOIN comments c ON p.id = c.post_id
     WHERE p.status = 'published'
     GROUP BY p.id
     ORDER BY p.created_at DESC
@@ -47,11 +46,13 @@ app.get('/api/posts/:slug', async (c: Context<{ Bindings: Bindings }>) => {
   const { slug } = c.req.param()
 
   const post = await c.env.DB.prepare(`
-    SELECT 
+    SELECT
       p.id, p.title, p.content, p.slug, p.created_at, p.views, p.likes,
-      u.username as author_name, u.avatar_url as author_avatar
+      u.username as author_name, u.avatar_url as author_avatar,
+      c.name as category
     FROM posts p
     LEFT JOIN users u ON p.author_id = u.id
+    LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.slug = ?
   `).bind(slug).first()
 
@@ -61,11 +62,10 @@ app.get('/api/posts/:slug', async (c: Context<{ Bindings: Bindings }>) => {
 
   // 获取评论
   const comments = await c.env.DB.prepare(`
-    SELECT 
+    SELECT
       c.id, c.content, c.created_at,
-      u.username as author_name, u.avatar_url as author_avatar
+      c.author_name
     FROM comments c
-    LEFT JOIN users u ON c.author_id = u.id
     WHERE c.post_id = ?
     ORDER BY c.created_at DESC
   `).bind(post.id).all()
@@ -88,9 +88,9 @@ app.post('/api/posts/:slug/comments', async (c: Context<{ Bindings: Bindings }>)
   }
 
   await c.env.DB.prepare(`
-    INSERT INTO comments (post_id, author_id, content)
+    INSERT INTO comments (post_id, author_name, content)
     VALUES (?, ?, ?)
-  `).bind(post.id, userId, content).run()
+  `).bind(post.id, "anonymous", content).run()
 
   return c.json({ message: 'Comment created successfully' })
 })

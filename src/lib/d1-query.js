@@ -49,11 +49,10 @@ function getPostBySlug(slug) {
   
   // 获取评论
   const commentsQuery = `
-    SELECT 
+    SELECT
       c.id, c.content, c.created_at,
-      u.username as author_name, u.avatar_url as author_avatar
+      c.author_name, c.author_email
     FROM comments c
-    LEFT JOIN users u ON c.author_id = u.id
     WHERE c.post_id = ${post.id}
     ORDER BY c.created_at DESC
   `;

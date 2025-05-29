@@ -10,20 +10,31 @@ interface PostPageProps {
   }
 }
 
-export default function PostPage({ params }: PostPageProps) {
-  // 模拟文章数据
-  const post = {
-    title: "Hello world!",
-    content: "Welcome to WordPress. This is your first post. Edit or delete it, then start writing!",
-    date: "18 5 月, 2025",
-    views: 12,
-    likes: 2,
-    comments: 2,
-    author: "admin",
-    category: "Uncategorized",
-    tags: ["暂无"],
-    lastModified: "18 5 月, 2025"
-  }
+export default async function PostPage({ params }: PostPageProps) {
+  const getPost = async (slug: string): Promise<any> => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8787/api/posts/${slug}`);
+      if (!res.ok) throw new Error('网络请求失败');
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching post:', error);
+      return {
+        title: "Hello world!",
+        content: "Welcome to WordPress. This is your first post. Edit or delete it, then start writing!",
+        date: "18 5 月, 2025",
+        views: 12,
+        likes: 2,
+        comments: 2,
+        author: "admin",
+        category: "Uncategorized",
+        tags: ["暂无"],
+        lastModified: "18 5 月, 2025"
+      };
+    }
+  };
+
+  const post = await getPost(params.slug);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -38,11 +49,11 @@ export default function PostPage({ params }: PostPageProps) {
                   首页
                 </Link>
                 <span className="text-gray-400">/</span>
-                <Link 
-                  href={`/category/${post.category.toLowerCase()}`}
+                <Link
+                  href={`/category/${post.category ? post.category.toLowerCase() : 'uncategorized'}`}
                   className="text-gray-600 hover:text-blue-600"
                 >
-                  {post.category}
+                  {post.category || 'Uncategorized'}
                 </Link>
                 <span className="text-gray-400">/</span>
                 <span className="text-gray-900">正文</span>
@@ -51,25 +62,25 @@ export default function PostPage({ params }: PostPageProps) {
               <div className="flex items-center gap-6 text-gray-500 text-sm mb-8">
                 <div className="flex items-center gap-2">
                   <FaUser className="text-gray-400" />
-                  <Link href={`/author/${post.author.toLowerCase()}`} className="hover:text-blue-600">
-                    {post.author}
+                  <Link href={`/author/${post.author ? post.author.toLowerCase() : 'anonymous'}`} className="hover:text-blue-600">
+                    {post.author || 'Anonymous'}
                   </Link>
                 </div>
                 <div className="flex items-center gap-2">
                   <FaCalendarAlt className="text-gray-400" />
-                  <span>{post.date}</span>
+                  <span>{post.created_at || '未知日期'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FaEye className="text-gray-400" />
-                  <span>{post.views} 浏览</span>
+                  <span>{post.views !== undefined ? post.views : 0} 浏览</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FaHeart className="text-gray-400" />
-                  <span>{post.likes} 点赞</span>
+                  <span>{post.likes !== undefined ? post.likes : 0} 点赞</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FaComment className="text-gray-400" />
-                  <span>{post.comments} 评论</span>
+                  <span>{post.comments !== undefined ? post.comments.length : 0} 评论</span>
                 </div>
               </div>
               <div className="aspect-[21/9] relative mb-8">
@@ -88,7 +99,7 @@ export default function PostPage({ params }: PostPageProps) {
               <div className="flex flex-wrap items-center justify-between pt-6 border-t border-gray-100">
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <span>标签：</span>
-                  {post.tags.map((tag, index) => (
+                  {post.tags && post.tags.map((tag: string, index: number) => (
                     <Link
                       key={index}
                       href={`/tag/${tag}`}
@@ -99,7 +110,7 @@ export default function PostPage({ params }: PostPageProps) {
                   ))}
                 </div>
                 <div className="text-sm text-gray-500">
-                  最后更新：{post.lastModified}
+                  最后更新：{post.updated_at || '未知日期'}
                 </div>
               </div>
             </div>

@@ -60,7 +60,21 @@ app.get('/api/posts/:slug', async (c: Context<{ Bindings: Bindings }>) => {
     return c.json({ error: 'Post not found' }, 404)
   }
 
-  // 获取评论
+  return c.json(post)
+})
+
+// 获取评论
+app.get('/api/posts/:slug/comments', async (c: Context<{ Bindings: Bindings }>) => {
+  const { slug } = c.req.param()
+
+  const post = await c.env.DB.prepare(`
+    SELECT id FROM posts WHERE slug = ?
+  `).bind(slug).first()
+
+  if (!post) {
+    return c.json({ error: 'Post not found' }, 404)
+  }
+
   const comments = await c.env.DB.prepare(`
     SELECT
       c.id, c.content, c.created_at,
@@ -70,7 +84,7 @@ app.get('/api/posts/:slug', async (c: Context<{ Bindings: Bindings }>) => {
     ORDER BY c.created_at DESC
   `).bind(post.id).all()
 
-  return c.json({ ...post, comments })
+  return c.json(comments)
 })
 
 // 创建评论

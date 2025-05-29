@@ -15,26 +15,40 @@ export default async function PostPage({ params }: PostPageProps) {
     try {
       const res = await fetch(`http://127.0.0.1:8787/api/posts/${slug}`);
       if (!res.ok) throw new Error('网络请求失败');
-      const data = await res.json();
+      const data = await res.json() as Record<string, any>;
+      console.log('Fetched post data:', data); // 调试信息
       return data;
     } catch (error) {
       console.error('Error fetching post:', error);
       return {
         title: "Hello world!",
         content: "Welcome to WordPress. This is your first post. Edit or delete it, then start writing!",
-        date: "18 5 月, 2025",
+        created_at: "18 5 月, 2025",
         views: 12,
         likes: 2,
-        comments: 2,
         author: "admin",
         category: "Uncategorized",
         tags: ["暂无"],
-        lastModified: "18 5 月, 2025"
+        updated_at: "18 5 月, 2025"
       };
     }
   };
 
+  const getComments = async (slug: string): Promise<any> => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8787/api/posts/${slug}/comments`);
+      if (!res.ok) throw new Error('网络请求失败');
+      const data = await res.json() as Record<string, any>;
+      console.log('Fetched comments data:', data); // 调试信息
+      return data.results || [];
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      return [];
+    }
+  };
+
   const post = await getPost(params.slug);
+  const comments = await getComments(params.slug);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -80,7 +94,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <FaComment className="text-gray-400" />
-                  <span>{post.comments !== undefined ? post.comments.length : 0} 评论</span>
+                  <span>{comments !== undefined ? comments.length : 0} 评论</span>
                 </div>
               </div>
               <div className="aspect-[21/9] relative mb-8">
@@ -119,18 +133,24 @@ export default async function PostPage({ params }: PostPageProps) {
             <div className="bg-white rounded-lg p-8">
               <h2 className="text-2xl font-bold mb-6">评论</h2>
               <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="font-medium">A WordPress Commenter</div>
-                        <div className="text-sm text-gray-500">18 5 月, 2025</div>
+                {comments && comments.length > 0 ? (
+                  comments.map((comment: any, index: number) => (
+                    <div key={index} className="flex gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-medium">{comment.author_name || 'Anonymous'}</div>
+                            <div className="text-sm text-gray-500">{comment.created_at || '未知日期'}</div>
+                          </div>
+                          <p className="text-gray-600">{comment.content}</p>
+                        </div>
                       </div>
-                      <p className="text-gray-600">Hi, this is a comment. To get started with moderating, editing, and deleting comments, please visit the Comments screen in the dashboard.</p>
                     </div>
-                  </div>
-                </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500">暂无评论</p>
+                )}
               </div>
 
               {/* 评论表单 */}

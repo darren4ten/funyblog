@@ -90,7 +90,7 @@ export default function Sidebar({
   return (
     <div className="space-y-6">
       <RecentPosts />
-      <RecentComments comments={recentComments} />
+      <RecentComments />
       <Archives archives={archives} />
       <Categories categories={categories} />
     </div>

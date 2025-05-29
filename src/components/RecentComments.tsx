@@ -1,45 +1,58 @@
 'use client'
 
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 
 interface Comment {
   id: number
-  author: string
-  postTitle: string
-  postSlug: string
+  author_name: string
+  post_title: string
+  post_slug: string
 }
 
-interface RecentCommentsProps {
-  comments?: Comment[]
-}
+export default function RecentComments() {
+  const [comments, setComments] = useState<Comment[]>([]);
 
-const defaultComments: Comment[] = [
-  {
-    id: 1,
-    author: 'admin',
-    postTitle: 'Hello world!',
-    postSlug: 'hello-world'
-  },
-  {
-    id: 2,
-    author: 'A WordPress Commenter',
-    postTitle: 'Hello world!',
-    postSlug: 'hello-world'
-  }
-]
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:8787/api/comments?limit=5');
+        if (!res.ok) throw new Error('网络请求失败');
+        const data = await res.json() as Record<string, any>;
+        setComments(data.results || data || []);
+      } catch (error) {
+        console.error('Error fetching recent comments:', error);
+        setComments([
+          {
+            id: 1,
+            author_name: 'admin',
+            post_title: 'Hello world!',
+            post_slug: 'hello-world'
+          },
+          {
+            id: 2,
+            author_name: 'A WordPress Commenter',
+            post_title: 'Hello world!',
+            post_slug: 'hello-world'
+          }
+        ]);
+      }
+    };
 
-export default function RecentComments({ comments = defaultComments }: RecentCommentsProps) {
+    fetchComments();
+  }, []);
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-lg font-bold mb-4">Recent Comments</h2>
+      <h2 className="text-lg font-bold mb-4">最新评论</h2>
       <div className="space-y-3">
         {comments.map(comment => (
           <div key={comment.id}>
-            <Link 
-              href={`/posts/${comment.postSlug}#comments`} 
+            <Link
+              href={`/posts/${comment.post_slug}#comments`}
               className="text-gray-700 hover:text-blue-600 line-clamp-2"
             >
-              {comment.author} 发表在 {comment.postTitle}
+              {comment.author_name} 发表在 {comment.post_title}
             </Link>
           </div>
         ))}

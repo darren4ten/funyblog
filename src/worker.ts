@@ -109,6 +109,23 @@ app.post('/api/posts/:slug/comments', async (c: Context<{ Bindings: Bindings }>)
   return c.json({ message: 'Comment created successfully' })
 })
 
+ // 获取最近评论
+app.get('/api/comments', async (c: Context<{ Bindings: Bindings }>) => {
+  const { limit = 5 } = c.req.query()
+
+  const comments = await c.env.DB.prepare(`
+    SELECT
+      c.id, c.content, c.created_at, c.author_name, p.title as post_title, p.slug as post_slug
+    FROM comments c
+    LEFT JOIN posts p ON c.post_id = p.id
+    WHERE c.status = 'approved'
+    ORDER BY c.created_at DESC
+    LIMIT ?
+  `).bind(limit).all()
+
+  return c.json(comments)
+})
+
 // 点赞文章
 app.post('/api/posts/:slug/like', async (c: Context<{ Bindings: Bindings }>) => {
   const { slug } = c.req.param()

@@ -89,7 +89,7 @@ export default function Sidebar({
 }: SidebarProps) {
   return (
     <div className="space-y-6">
-      <RecentPosts posts={recentPosts} />
+      <RecentPosts />
       <RecentComments comments={recentComments} />
       <Archives archives={archives} />
       <Categories categories={categories} />

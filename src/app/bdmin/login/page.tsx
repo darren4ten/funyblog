@@ -1,17 +1,20 @@
 "use client";
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
+    setLoading(true);
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
@@ -29,6 +32,8 @@ export default function LoginPage() {
       }
     } catch (err) {
       setError('发生错误，请重试');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,15 +82,25 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+            {loading && (
+              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                <div className="text-white text-lg">登录中...</div>
+              </div>
+            )}
             </div>
+          </div>
+
+          <div className="mt-4 text-center">
+            <Link href="/" className="text-sm text-indigo-600 hover:text-indigo-500">返回站点</Link>
           </div>
 
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={loading}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${loading ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
             >
-              登录
+              {loading ? '登录中...' : '登录'}
             </button>
           </div>
         </form>

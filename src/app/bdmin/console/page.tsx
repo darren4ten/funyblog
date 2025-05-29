@@ -1,10 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function ConsolePage() {
   const [siteName, setSiteName] = useState("我的博客");
   const [currentUser, setCurrentUser] = useState("未知用户");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     // 获取站点名称
@@ -20,22 +24,42 @@ export default function ConsolePage() {
       }
     };
 
-    // 获取当前用户信息（假设从cookie中获取用户ID）
-    const fetchCurrentUser = async () => {
+    // 获取当前用户信息并校验权限
+    const checkAuth = async () => {
       try {
         const res = await fetch('/api/admin/current-user');
         if (res.ok) {
           const data = await res.json() as { username?: string };
           setCurrentUser(data.username || "未知用户");
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+          alert('未登录，3秒后跳转到登录页面');
+          setTimeout(() => {
+            router.push('/bdmin/login');
+          }, 3000);
         }
       } catch (error) {
         console.error('获取用户信息出错:', error);
+        setIsAuthenticated(false);
+        // 不在catch中重复显示提示信息，因为else分支已经处理了
+        // 确保只在else分支中显示提示
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchSiteName();
-    fetchCurrentUser();
-  }, []);
+    checkAuth();
+  }, [router]);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-100">正在验证权限，请稍候...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-100">未登录，请登录后访问</div>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">

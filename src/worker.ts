@@ -27,7 +27,7 @@ app.get('/api/posts', async (c: Context<{ Bindings: Bindings }>) => {
 
   const posts = await c.env.DB.prepare(`
     SELECT
-      p.id, p.title, p.content, p.slug, p.created_at, p.views, p.likes,
+      p.id, p.title, p.summary, p.slug, p.created_at, p.views, p.likes,
       u.username as author_name, u.avatar_url as author_avatar,
       c.name as category,
       c.slug as category_slug,

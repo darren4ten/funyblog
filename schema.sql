@@ -103,7 +103,7 @@ INSERT INTO tags (name, slug) VALUES
 ('Next.js', 'nextjs');
 
 -- 文章数据
-INSERT INTO posts (title, slug, content, excerpt, author_id, category_id, status, views, likes, is_featured, reading_time, meta_description) VALUES
+INSERT INTO posts (title, slug, content, excerpt, summary, author_id, category_id, status, views, likes, is_featured, reading_time, meta_description) VALUES
 ('Hello World', 'hello-world', '欢迎使用我们的博客系统！这是第一篇文章。
 
 这是一个基于 Cloudflare 技术栈的博客系统，包括：
@@ -115,7 +115,7 @@ INSERT INTO posts (title, slug, content, excerpt, author_id, category_id, status
 - React
 - Tailwind CSS
 
-希望你能喜欢这个系统！', '欢迎使用我们的博客系统！这是第一篇文章。', 1, 1, 'published', 9, 2, 1, 2, '一个基于 Cloudflare 技术栈的现代博客系统'),
+希望你能喜欢这个系统！', '欢迎使用我们的博客系统！这是第一篇文章。', '欢迎使用我们的博客系统！这是第一篇文章。这是一个基于 Cloudflare 技术栈的博客系统，包括：', 1, 1, 'published', 9, 2, 1, 2, '一个基于 Cloudflare 技术栈的现代博客系统'),
 ('Markdown 教程', 'markdown-tutorial', '# Markdown 基础教程
 
 Markdown 是一种轻量级标记语言，它允许人们使用易读易写的纯文本格式编写文档。
@@ -163,7 +163,7 @@ console.log("Hello World!");
 
 ## 结语
 
-这只是 Markdown 的基础用法，更多高级用法请参考官方文档。', 'Markdown 是一种轻量级标记语言，本文介绍其基本语法。', 1, 3, 'published', 2, 9, 0, 5, 'Markdown 基础教程：从入门到精通');
+这只是 Markdown 的基础用法，更多高级用法请参考官方文档。', 'Markdown 是一种轻量级标记语言，本文介绍其基本语法。', 'Markdown 是一种轻量级标记语言，它允许人们使用易读易写的纯文本格式编写文档。', 1, 3, 'published', 2, 9, 0, 5, 'Markdown 基础教程：从入门到精通');
 
 -- 文章标签关联数据
 INSERT INTO post_tags (post_id, tag_id) VALUES

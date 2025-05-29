@@ -6,7 +6,8 @@ import { D1Database } from '@cloudflare/workers-types'
 interface Post {
   id: number
   title: string
-  content: string
+  content?: string
+  summary?: string
   slug: string
   author_name: string
   author_avatar: string
@@ -79,7 +80,7 @@ export default async function HomePage() {
                 <div key={post.slug}>
                   <PostCard
                     title={post.title}
-                    excerpt={post.content.substring(0, 200) + '...'}
+                    excerpt={post.summary || (post.content ? post.content.substring(0, 200) + '...' : '')}
                     date={new Date(post.created_at).toLocaleDateString('zh-CN')}
                     views={post.views}
                     likes={post.likes}

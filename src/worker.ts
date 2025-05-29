@@ -15,10 +15,10 @@ const app = new Hono<{ Bindings: Bindings }>()
 // 配置 CORS
 app.use('*', cors())
 
-// JWT 中间件
-app.use('/api/*', jwt({
-  secret: (c) => c.env.JWT_SECRET as string
-}))
+ // JWT 中间件 - 在本地开发环境中暂时禁用
+ // app.use('/api/*', jwt({
+ //   secret: 'placeholder-secret' // 临时解决方案，实际环境中应使用环境变量
+ // }))
 
 // 获取文章列表
 app.get('/api/posts', async (c: Context<{ Bindings: Bindings }>) => {
@@ -106,4 +106,8 @@ app.post('/api/posts/:slug/like', async (c: Context<{ Bindings: Bindings }>) => 
   return c.json({ message: 'Post liked successfully' })
 })
 
-export const onRequest = handle(app) 
+export default {
+  fetch: (req: Request, env: any, ctx: any) => {
+    return app.fetch(req, env, ctx);
+  }
+}

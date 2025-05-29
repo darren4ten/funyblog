@@ -46,41 +46,20 @@ const FALLBACK_POSTS: Post[] = [
 
 async function getPosts(): Promise<Post[]> {
   try {
-    const db = globalThis.DB as D1Database | undefined
-
-    // 检查是否在 Cloudflare Pages 环境中
-    if (!db) {
-      console.log('Running in development mode, using fallback data')
-      return FALLBACK_POSTS
+    // 通过API获取文章列表
+    const res = await fetch('http://127.0.0.1:8787/api/posts');
+    if (!res.ok) throw new Error('网络请求失败');
+    const data = (await res.json()) as any;
+    // 兼容 Cloudflare Worker 返回格式
+    if (Array.isArray(data?.results)) {
+      return data.results as Post[];
+    } else if (Array.isArray(data)) {
+      return data as Post[];
     }
-
-    const result = await db.prepare(`
-      SELECT 
-        p.id,
-        p.title,
-        p.content,
-        p.slug,
-        p.created_at,
-        p.views,
-        p.likes,
-        u.name as author_name,
-        u.avatar as author_avatar,
-        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
-      FROM posts p
-      LEFT JOIN users u ON p.author_id = u.id
-      ORDER BY p.created_at DESC
-      LIMIT 10
-    `).all<Post>()
-
-    if (!result?.results?.length) {
-      console.log('No posts found, using fallback data')
-      return FALLBACK_POSTS
-    }
-
-    return result.results
+    return FALLBACK_POSTS;
   } catch (error) {
-    console.error('Error fetching posts:', error)
-    return FALLBACK_POSTS
+    console.error('Error fetching posts from local D1 database:', error);
+    return FALLBACK_POSTS;
   }
 }
 

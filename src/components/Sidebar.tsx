@@ -1,11 +1,27 @@
 'use client'
 
-import Link from 'next/link'
+import RecentPosts from './RecentPosts'
+import RecentComments from './RecentComments'
+import Archives from './Archives'
+import Categories from './Categories'
 
 interface Post {
   id: number
   title: string
   slug: string
+}
+
+interface Comment {
+  id: number
+  author: string
+  postTitle: string
+  postSlug: string
+}
+
+interface Archive {
+  year: string
+  month: string
+  url: string
 }
 
 interface Category {
@@ -16,6 +32,8 @@ interface Category {
 
 interface SidebarProps {
   recentPosts?: Post[]
+  recentComments?: Comment[]
+  archives?: Archive[]
   categories?: Category[]
 }
 
@@ -32,6 +50,29 @@ const defaultPosts: Post[] = [
   }
 ]
 
+const defaultComments: Comment[] = [
+  {
+    id: 1,
+    author: 'admin',
+    postTitle: 'Hello world!',
+    postSlug: 'hello-world'
+  },
+  {
+    id: 2,
+    author: 'A WordPress Commenter',
+    postTitle: 'Hello world!',
+    postSlug: 'hello-world'
+  }
+]
+
+const defaultArchives: Archive[] = [
+  {
+    year: '2025',
+    month: '5',
+    url: '/archives/2025/05'
+  }
+]
+
 const defaultCategories: Category[] = [
   {
     name: 'Uncategorized',
@@ -40,84 +81,18 @@ const defaultCategories: Category[] = [
   }
 ]
 
-export default function Sidebar({ 
-  recentPosts = defaultPosts, 
-  categories = defaultCategories 
+export default function Sidebar({
+  recentPosts = defaultPosts,
+  recentComments = defaultComments,
+  archives = defaultArchives,
+  categories = defaultCategories
 }: SidebarProps) {
   return (
     <div className="space-y-6">
-      {/* 最近文章 */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-bold mb-4">Recent Posts</h2>
-        <div className="space-y-3">
-          {recentPosts.map(post => (
-            <div key={post.id}>
-              <Link 
-                href={`/posts/${post.slug}`} 
-                className="text-gray-700 hover:text-blue-600 line-clamp-2"
-              >
-                {post.title}
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 最近评论 */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-bold mb-4">Recent Comments</h2>
-        <div className="space-y-3">
-          <div>
-            <Link 
-              href="/posts/hello-world#comments" 
-              className="text-gray-700 hover:text-blue-600 line-clamp-2"
-            >
-              admin 发表在 Hello world!
-            </Link>
-          </div>
-          <div>
-            <Link 
-              href="/posts/hello-world#comments" 
-              className="text-gray-700 hover:text-blue-600 line-clamp-2"
-            >
-              A WordPress Commenter 发表在 Hello world!
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* 归档 */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-bold mb-4">Archives</h2>
-        <div className="space-y-2">
-          <div>
-            <Link 
-              href="/archives/2025/05" 
-              className="text-gray-700 hover:text-blue-600"
-            >
-              2025 年 5 月
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* 分类 */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-bold mb-4">Categories</h2>
-        <div className="space-y-2">
-          {categories.map(category => (
-            <div key={category.slug} className="flex justify-between items-center">
-              <Link 
-                href={`/category/${category.slug}`} 
-                className="text-gray-700 hover:text-blue-600"
-              >
-                {category.name}
-              </Link>
-              <span className="text-gray-500 text-sm">({category.count})</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <RecentPosts posts={recentPosts} />
+      <RecentComments comments={recentComments} />
+      <Archives archives={archives} />
+      <Categories categories={categories} />
     </div>
   )
-} 
+}

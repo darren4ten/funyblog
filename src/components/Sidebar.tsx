@@ -92,7 +92,7 @@ export default function Sidebar({
       <RecentPosts />
       <RecentComments />
       <Archives archives={archives} />
-      <Categories categories={categories} />
+      <Categories />
     </div>
   )
 }

@@ -126,6 +126,21 @@ app.get('/api/comments', async (c: Context<{ Bindings: Bindings }>) => {
   return c.json(comments)
 })
 
+ // 获取所有分类
+app.get('/api/categories', async (c: Context<{ Bindings: Bindings }>) => {
+  const categories = await c.env.DB.prepare(`
+    SELECT
+      c.id, c.name, c.slug,
+      COUNT(p.id) as count
+    FROM categories c
+    LEFT JOIN posts p ON c.id = p.category_id
+    GROUP BY c.id
+    ORDER BY c.name ASC
+  `).all()
+
+  return c.json(categories)
+})
+
 // 点赞文章
 app.post('/api/posts/:slug/like', async (c: Context<{ Bindings: Bindings }>) => {
   const { slug } = c.req.param()

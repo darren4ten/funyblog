@@ -47,13 +47,17 @@ app.get('/api/posts/:slug', async (c: Context<{ Bindings: Bindings }>) => {
 
   const post = await c.env.DB.prepare(`
     SELECT
-      p.id, p.title, p.content, p.slug, p.created_at, p.views, p.likes,
+      p.id, p.title, p.content, p.slug, p.created_at, p.updated_at, p.views, p.likes,
       u.username as author_name, u.avatar_url as author_avatar,
-      c.name as category
+      c.name as category,
+      GROUP_CONCAT(t.name) as tags
     FROM posts p
     LEFT JOIN users u ON p.author_id = u.id
     LEFT JOIN categories c ON p.category_id = c.id
+    LEFT JOIN post_tags pt ON p.id = pt.post_id
+    LEFT JOIN tags t ON pt.tag_id = t.id
     WHERE p.slug = ?
+    GROUP BY p.id
   `).bind(slug).first()
 
   if (!post) {

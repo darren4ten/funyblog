@@ -113,15 +113,19 @@ export default async function PostPage({ params }: PostPageProps) {
               <div className="flex flex-wrap items-center justify-between pt-6 border-t border-gray-100">
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <span>标签：</span>
-                  {post.tags && post.tags.map((tag: string, index: number) => (
-                    <Link
-                      key={index}
-                      href={`/tag/${tag}`}
-                      className="bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors"
-                    >
-                      {tag}
-                    </Link>
-                  ))}
+                  {post.tags ? (
+                    post.tags.split(',').map((tag: string, index: number) => (
+                      <Link
+                        key={index}
+                        href={`/tag/${tag}`}
+                        className="bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors"
+                      >
+                        {tag}
+                      </Link>
+                    ))
+                  ) : (
+                    <span className="text-gray-500">暂无标签</span>
+                  )}
                 </div>
                 <div className="text-sm text-gray-500">
                   最后更新：{post.updated_at || '未知日期'}

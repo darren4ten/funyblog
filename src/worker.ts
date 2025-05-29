@@ -216,6 +216,33 @@ app.get('/api/site-settings', async (c: Context<{ Bindings: Bindings }>) => {
   return c.json(settings)
 })
 
+// 获取特定标签的文章列表
+app.get('/api/tags/:slug/posts', async (c: Context<{ Bindings: Bindings }>) => {
+  const { slug } = c.req.param()
+  const { page = 1, limit = 10 } = c.req.query()
+  const offset = (Number(page) - 1) * Number(limit)
+
+  const posts = await c.env.DB.prepare(`
+    SELECT
+      p.id, p.title, p.summary, p.slug, p.created_at, p.views, p.likes,
+      u.username as author_name, u.avatar_url as author_avatar,
+      c.name as category,
+      c.slug as category_slug,
+      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
+    FROM posts p
+    LEFT JOIN users u ON p.author_id = u.id
+    LEFT JOIN categories c ON p.category_id = c.id
+    LEFT JOIN post_tags pt ON p.id = pt.post_id
+    LEFT JOIN tags t ON pt.tag_id = t.id
+    WHERE REPLACE(LOWER(t.slug), '.', '') = REPLACE(LOWER(?), '.', '') AND p.status = 'published'
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(slug, limit, offset).all()
+
+  return c.json(posts)
+})
+
 export default {
   fetch: (req: Request, env: any, ctx: any) => {
     return app.fetch(req, env, ctx);

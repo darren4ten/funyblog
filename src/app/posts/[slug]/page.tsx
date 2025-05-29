@@ -166,7 +166,7 @@ export default async function PostPage({ params }: PostPageProps) {
                     rows={4}
                     placeholder="写下你的评论..."
                   />
-                  <div className="flex gap-4">
+                  <div className="flex flex-col gap-4 md:flex-row">
                     <input
                       type="text"
                       className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500"

@@ -64,15 +64,35 @@ export default function Search() {
           {isLoading ? (
             <div className="p-3 text-gray-500">搜索中...</div>
           ) : results.length > 0 ? (
-            results.map((result) => (
-              <Link
-                key={result.id}
-                href={`/posts/${result.slug}`}
-                className="block p-3 hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
-              >
-                {result.title}
-              </Link>
-            ))
+            results.map((result) => {
+              // 高亮匹配的关键字
+              const title = result.title;
+              const index = title.toLowerCase().indexOf(query.toLowerCase());
+              let highlightedTitle;
+              if (index !== -1) {
+                const before = title.slice(0, index);
+                const match = title.slice(index, index + query.length);
+                const after = title.slice(index + query.length);
+                highlightedTitle = (
+                  <>
+                    {before}
+                    <span className="text-red-500 font-bold">{match}</span>
+                    {after}
+                  </>
+                );
+              } else {
+                highlightedTitle = title;
+              }
+              return (
+                <Link
+                  key={result.id}
+                  href={`/posts/${result.slug}`}
+                  className="block p-3 hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
+                >
+                  {highlightedTitle}
+                </Link>
+              );
+            })
           ) : (
             <div className="p-3 text-gray-500">未找到匹配的文章</div>
           )}

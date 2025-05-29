@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Search from '../components/Search'
 
 export default function Banner() {
   return (
@@ -15,19 +16,7 @@ export default function Banner() {
           </div>
           
           {/* 搜索框 */}
-          <form className="flex" onSubmit={(e) => e.preventDefault()}>
-            <input
-              type="text"
-              placeholder="搜索..."
-              className="w-64 px-4 py-2 text-sm border border-transparent rounded-l focus:outline-none focus:border-white bg-white/10 text-white placeholder-white/60"
-            />
-            <button
-              type="submit"
-              className="px-6 py-2 text-sm bg-white/10 text-white rounded-r border border-transparent hover:bg-white/20 transition-colors"
-            >
-              搜索
-            </button>
-          </form>
+          <Search />
         </div>
       </div>
     </div>

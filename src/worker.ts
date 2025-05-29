@@ -168,6 +168,25 @@ app.get('/api/categories/:slug/posts', async (c: Context<{ Bindings: Bindings }>
   return c.json(posts)
 })
 
+ // 搜索文章
+app.get('/api/search', async (c: Context<{ Bindings: Bindings }>) => {
+  const { query, limit = 5 } = c.req.query()
+
+  if (!query) {
+    return c.json({ error: 'Query parameter is required' }, 400)
+  }
+
+  const posts = await c.env.DB.prepare(`
+    SELECT
+      p.id, p.title, p.slug
+    FROM posts p
+    WHERE p.title LIKE ? AND p.status = 'published'
+    LIMIT ?
+  `).bind(`%${query}%`, limit).all()
+
+  return c.json(posts)
+})
+
 // 点赞文章
 app.post('/api/posts/:slug/like', async (c: Context<{ Bindings: Bindings }>) => {
   const { slug } = c.req.param()

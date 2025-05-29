@@ -13,6 +13,7 @@ interface PostCardProps {
   comments: number
   author: string
   category: string
+  categorySlug?: string
   slug: string
 }
 
@@ -25,6 +26,7 @@ export default function PostCard({
   comments,
   author,
   category,
+  categorySlug,
   slug,
 }: PostCardProps) {
   return (
@@ -40,7 +42,7 @@ export default function PostCard({
       <div className="flex-1 p-6">
         <div className="flex flex-col h-full">
           <Link 
-            href={`/category/${category.toLowerCase()}`}
+            href={`/category/${categorySlug || category.toLowerCase()}`}
             className="bg-blue-500 text-white text-sm px-4 py-1 rounded-full self-start mb-3 hover:bg-blue-600 transition-colors"
           >
             {category}

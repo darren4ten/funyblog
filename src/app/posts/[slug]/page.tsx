@@ -76,8 +76,8 @@ export default async function PostPage({ params }: PostPageProps) {
               <div className="flex items-center gap-6 text-gray-500 text-sm mb-8">
                 <div className="flex items-center gap-2">
                   <FaUser className="text-gray-400" />
-                  <Link href={`/author/${post.author ? post.author.toLowerCase() : 'anonymous'}`} className="hover:text-blue-600">
-                    {post.author || 'Anonymous'}
+                  <Link href={`/author/${post.author_name ? post.author_name.toLowerCase() : 'anonymous'}`} className="hover:text-blue-600">
+                    {post.author_name || 'Anonymous'}
                   </Link>
                 </div>
                 <div className="flex items-center gap-2">

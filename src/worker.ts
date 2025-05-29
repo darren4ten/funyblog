@@ -29,9 +29,12 @@ app.get('/api/posts', async (c: Context<{ Bindings: Bindings }>) => {
     SELECT
       p.id, p.title, p.content, p.slug, p.created_at, p.views, p.likes,
       u.username as author_name, u.avatar_url as author_avatar,
+      c.name as category,
+      c.slug as category_slug,
       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
     FROM posts p
     LEFT JOIN users u ON p.author_id = u.id
+    LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.status = 'published'
     GROUP BY p.id
     ORDER BY p.created_at DESC

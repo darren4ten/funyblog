@@ -14,6 +14,8 @@ interface Post {
   likes: number
   views: number
   comments_count: number
+  category?: string
+  category_slug?: string
 }
 
 // 后备数据
@@ -83,7 +85,8 @@ export default async function HomePage() {
                     likes={post.likes}
                     comments={post.comments_count}
                     author={post.author_name}
-                    category="Uncategorized"
+                    category={post.category || "Uncategorized"}
+                    categorySlug={post.category_slug || "uncategorized"}
                     slug={post.slug}
                   />
                 </div>

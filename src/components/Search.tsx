@@ -13,12 +13,21 @@ export default function Search() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isComposing, setIsComposing] = useState(false)
 
   useEffect(() => {
     if (!query.trim()) {
       setResults([])
       return
     }
+
+    if (isComposing) {
+      // 如果正在中文输入过程中，不触发搜索
+      return
+    }
+
+    // 取消拼音输入检测，统一使用相同的防抖延迟
+    const delay = 400
 
     const fetchResults = async () => {
       setIsLoading(true)
@@ -35,9 +44,9 @@ export default function Search() {
       }
     }
 
-    const debounceTimer = setTimeout(fetchResults, 300)
+    const debounceTimer = setTimeout(fetchResults, delay)
     return () => clearTimeout(debounceTimer)
-  }, [query])
+  }, [query, isComposing])
 
   return (
     <div className="relative">
@@ -45,6 +54,8 @@ export default function Search() {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        onCompositionStart={() => setIsComposing(true)}
+        onCompositionEnd={() => setIsComposing(false)}
         placeholder="搜索文章..."
         className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
       />

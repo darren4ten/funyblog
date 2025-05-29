@@ -29,19 +29,11 @@ export async function GET(req: Request) {
     }
 
     const userId = decoded.userId;
-    // 临时使用execSync进行查询
-    const command = `wrangler d1 execute funyblog --command="SELECT username FROM users WHERE id = ${userId}" --json`;
-    let result;
-    try {
-      result = execSync(command, { encoding: 'utf-8' });
-    } catch (err) {
-      console.error('数据库查询错误:', err);
-      return NextResponse.json({ error: '服务器错误' }, { status: 500 });
-    }
-    const parsedResult = JSON.parse(result);
+    const { getUserById } = require('../../../../db/repository');
+    const user = await getUserById(userId);
 
-    if (parsedResult && parsedResult[0].results && parsedResult[0].results.length > 0) {
-      return NextResponse.json({ username: parsedResult[0].results[0].username }, { status: 200 });
+    if (user) {
+      return NextResponse.json({ username: user.username }, { status: 200 });
     } else {
       return NextResponse.json({ error: '用户未找到' }, { status: 404 });
     }

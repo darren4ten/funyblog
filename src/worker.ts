@@ -145,6 +145,29 @@ app.get('/api/categories', async (c: Context<{ Bindings: Bindings }>) => {
   return c.json(categories)
 })
 
+ // 获取某个分类的所有文章
+app.get('/api/categories/:slug/posts', async (c: Context<{ Bindings: Bindings }>) => {
+  const { slug } = c.req.param()
+  const { page = 1, limit = 10 } = c.req.query()
+  const offset = (Number(page) - 1) * Number(limit)
+
+  const posts = await c.env.DB.prepare(`
+    SELECT
+      p.id, p.title, p.content, p.slug, p.created_at, p.views, p.likes,
+      u.username as author_name, u.avatar_url as author_avatar,
+      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
+    FROM posts p
+    LEFT JOIN users u ON p.author_id = u.id
+    LEFT JOIN categories c ON p.category_id = c.id
+    WHERE c.slug = ? AND p.status = 'published'
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(slug, limit, offset).all()
+
+  return c.json(posts)
+})
+
 // 点赞文章
 app.post('/api/posts/:slug/like', async (c: Context<{ Bindings: Bindings }>) => {
   const { slug } = c.req.param()

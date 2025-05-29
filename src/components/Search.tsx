@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
 interface SearchResult {
@@ -14,6 +14,7 @@ export default function Search() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isComposing, setIsComposing] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!query.trim()) {
@@ -48,8 +49,22 @@ export default function Search() {
     return () => clearTimeout(debounceTimer)
   }, [query, isComposing])
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setQuery('')
+        setResults([])
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   return (
-    <div className="relative">
+    <div ref={searchRef} className="relative">
       <input
         type="text"
         value={query}

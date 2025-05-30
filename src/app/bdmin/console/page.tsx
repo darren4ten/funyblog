@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '../../../lib/api';
 
 export default function ConsolePage() {
   const [siteName, setSiteName] = useState("我的博客");
@@ -27,10 +28,7 @@ export default function ConsolePage() {
     // 获取当前用户信息并校验权限
     const checkAuth = async () => {
       try {
-        // 从 Cookie 中读取 token
-        const cookies = document.cookie.split('; ');
-        const tokenCookie = cookies.find(row => row.startsWith('auth_token='));
-        const token = tokenCookie ? tokenCookie.split('=')[1] : null;
+        const token = localStorage.getItem('auth_token');
         
         if (!token) {
           setIsAuthenticated(false);
@@ -41,11 +39,8 @@ export default function ConsolePage() {
           return;
         }
         
-        const res = await fetch('http://127.0.0.1:8787/api/bdmin/current-user', {
+        const res = await fetchWithAuth('http://127.0.0.1:8787/api/bdmin/current-user', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({ token }),
         });
         if (res.ok) {

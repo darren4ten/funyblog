@@ -4,6 +4,12 @@ import { handle } from 'hono/cloudflare-pages'
 import { cors } from 'hono/cors'
 import type { Context } from 'hono'
 
+// 扩展 Hono 上下文类型以包含自定义变量
+interface CustomContext extends Context {
+  set(key: 'jwtPayload', value: Record<string, any>): void;
+  get(key: 'jwtPayload'): Record<string, any> | undefined;
+}
+
 type Bindings = {
   DB: D1Database
   JWT_SECRET: string
@@ -19,10 +25,63 @@ app.use('*', cors({
   credentials: true
 }))
 
- // JWT 中间件 - 在本地开发环境中暂时禁用
- // app.use('/api/*', jwt({
- //   secret: 'placeholder-secret' // 临时解决方案，实际环境中应使用环境变量
- // }))
+ // JWT 中间件 - 验证受保护的路由，但排除登录接口
+ app.use('/api/bdmin/*', async (c, next) => {
+   // 排除登录接口
+   if (c.req.path === '/api/bdmin/login') {
+     await next();
+     return;
+   }
+   const authHeader = c.req.header('Authorization');
+   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+     return c.json({ error: '未提供令牌或令牌格式错误' }, 401);
+   }
+   
+   const token = authHeader.split(' ')[1];
+   if (!token) {
+     return c.json({ error: '未提供令牌' }, 401);
+   }
+   
+   try {
+     const parts = token.split('.');
+     if (parts.length !== 3) {
+       return c.json({ error: '无效的令牌格式' }, 401);
+     }
+     const [encodedHeader, encodedPayload, signature] = parts;
+     const input = `${encodedHeader}.${encodedPayload}`;
+     const textEncoder = new TextEncoder();
+     const secret = c.env.JWT_SECRET || 'default-secret-for-development-only';
+     const keyData = textEncoder.encode(secret);
+     const inputData = textEncoder.encode(input);
+     if (!c.env.JWT_SECRET) {
+       console.warn('JWT_SECRET 环境变量未设置，使用默认密钥（仅用于开发环境）');
+     }
+     const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+     const signatureBuffer = Uint8Array.from(atob(signature.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+     const isValid = await crypto.subtle.verify('HMAC', cryptoKey, signatureBuffer, inputData);
+     
+     if (!isValid) {
+       return c.json({ error: '令牌签名无效' }, 401);
+     }
+     
+     const decodedPayload = atob(encodedPayload.replace(/-/g, '+').replace(/_/g, '/'));
+     const decoded = JSON.parse(decodedPayload);
+     if (!decoded.userId || !decoded.username || !decoded.role || !decoded.iat || !decoded.exp) {
+       return c.json({ error: '无效的令牌格式' }, 401);
+     }
+     if (decoded.exp < Math.floor(Date.now() / 1000)) {
+       return c.json({ error: '令牌已过期' }, 401);
+     }
+     
+     // 将用户信息添加到请求上下文中
+     // 使用扩展后的上下文类型
+     (c as unknown as CustomContext).set('jwtPayload', decoded);
+     await next();
+   } catch (err) {
+     console.error('JWT 验证错误:', err);
+     return c.json({ error: '无效的令牌' }, 401);
+   }
+ });
 
 // 获取文章列表
 app.get('/api/posts', async (c: Context<{ Bindings: Bindings }>) => {
@@ -272,9 +331,24 @@ app.post('/api/bdmin/login', async (c: Context<{ Bindings: Bindings }>) => {
 
     const userId = user.id;
     const userName = user.username;
-    // 使用简单的 base64 编码生成令牌，适用于 Cloudflare Workers 环境
+    // 使用 HMAC-SHA256 签名生成 JWT 令牌
+    const header = JSON.stringify({ alg: 'HS256', typ: 'JWT' });
     const payload = JSON.stringify({ userId, username: userName, role: 'admin', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) });
-    const token = btoa(payload);
+    const encodedHeader = btoa(header).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const encodedPayload = btoa(payload).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const input = `${encodedHeader}.${encodedPayload}`;
+    const textEncoder = new TextEncoder();
+    const secret = c.env.JWT_SECRET || 'default-secret-for-development-only';
+    const keyData = textEncoder.encode(secret);
+    const inputData = textEncoder.encode(input);
+    if (!c.env.JWT_SECRET) {
+      console.warn('JWT_SECRET 环境变量未设置，使用默认密钥（仅用于开发环境）');
+    }
+    const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, inputData);
+    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+    const signature = btoa(String.fromCharCode.apply(null, signatureArray)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const token = `${input}.${signature}`;
     const response = c.json({ message: '登录成功', token: token }, 200);
     response.headers.set('Set-Cookie', `auth_token=${token}; Path=/; Max-Age=${60 * 60 * 24 * 7}; HttpOnly`);
     return response;
@@ -294,7 +368,26 @@ app.post('/api/bdmin/current-user', async (c: Context<{ Bindings: Bindings }>) =
 
     let decoded;
     try {
-      const decodedPayload = atob(token);
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return c.json({ error: '无效的令牌格式' }, 401);
+      }
+      const [encodedHeader, encodedPayload, signature] = parts;
+      const input = `${encodedHeader}.${encodedPayload}`;
+      const textEncoder = new TextEncoder();
+      const secret = c.env.JWT_SECRET || 'default-secret-for-development-only';
+      const keyData = textEncoder.encode(secret);
+      const inputData = textEncoder.encode(input);
+      if (!c.env.JWT_SECRET) {
+        console.warn('JWT_SECRET 环境变量未设置，使用默认密钥（仅用于开发环境）');
+      }
+      const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+      const signatureBuffer = Uint8Array.from(atob(signature.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+      const isValid = await crypto.subtle.verify('HMAC', cryptoKey, signatureBuffer, inputData);
+      if (!isValid) {
+        return c.json({ error: '令牌签名无效' }, 401);
+      }
+      const decodedPayload = atob(encodedPayload.replace(/-/g, '+').replace(/_/g, '/'));
       decoded = JSON.parse(decodedPayload);
       if (!decoded.userId || !decoded.username || !decoded.role || !decoded.iat || !decoded.exp) {
         return c.json({ error: '无效的令牌格式' }, 401);

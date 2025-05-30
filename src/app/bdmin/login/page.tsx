@@ -22,12 +22,13 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ username, password }),
+        credentials: 'include',
       });
 
       if (res.ok) {
         const data = await res.json() as { token?: string, error?: string };
         if (data.token) {
-          document.cookie = `auth_token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7};`;
+          localStorage.setItem('auth_token', data.token);
           router.push('/bdmin/console');
         } else {
           setError('登录成功但未获取到令牌');

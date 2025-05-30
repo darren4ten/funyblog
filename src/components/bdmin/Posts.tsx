@@ -45,13 +45,13 @@ export default function Posts() {
   };
 
   const handleAddPost = () => {
-    router.push('/bdmin/posts/edit');
+    setEditingPostId(-1); // 使用 -1 表示新增文章
   };
 
-  if (editingPostId) {
+  if (editingPostId !== null) {
     return (
       <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
-        <PostEditor postId={editingPostId} onClose={() => handlePostSaved()} />
+        <PostEditor postId={editingPostId > 0 ? editingPostId : undefined} onClose={() => handlePostSaved()} />
       </div>
     );
   }

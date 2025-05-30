@@ -378,8 +378,8 @@ export async function createPost(db, title, content, category, tags) {
   // 创建文章
   const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   const result = await db.prepare(`
-    INSERT INTO posts (title, content, slug, author_id, status)
-    VALUES (?, ?, ?, 1, 'published')
+    INSERT INTO posts (title, content, slug, author_id, status, category_id)
+    VALUES (?, ?, ?, 1, 'published', 1)
     RETURNING id
   `).bind(title, content, slug).first();
 

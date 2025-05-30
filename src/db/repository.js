@@ -1,100 +1,271 @@
-// 导入必要的依赖
-const { execSync } = require('child_process');
+// 数据库查询函数集合，用于 Cloudflare Worker 环境
 
-// 执行数据库查询的函数
-function queryD1Database(query) {
-  try {
-    // 避免在命令中使用引号，改用单引号或避免多行查询直接拼接
-    const sanitizedQuery = query.replace(/(\r\n|\n|\r)/gm, " ").trim();
-    const command = `wrangler d1 execute funyblog --command="${sanitizedQuery}" --json`;
-    console.log('Executing command:', command);
-    const result = execSync(command, { encoding: 'utf-8', shell: true });
-    return JSON.parse(result);
-  } catch (error) {
-    console.error('Error executing D1 query:', error.message, error.stderr);
-    return null;
-  }
-}
-
-// 查询文章列表
-function getPosts() {
-  const query = `
-    SELECT 
-      p.id, p.title, p.content, p.slug, p.created_at, p.views, p.likes,
+/**
+ * 获取文章列表
+ * @param {D1Database} db - D1 数据库实例
+ * @param {number} page - 页码
+ * @param {number} limit - 每页数量
+ * @returns {Promise<Object[]>} 文章列表
+ */
+export async function getPosts(db, page = 1, limit = 10) {
+  const offset = (Number(page) - 1) * Number(limit);
+  const posts = await db.prepare(`
+    SELECT
+      p.id, p.title, p.summary, p.slug, p.created_at, p.views, p.likes,
       u.username as author_name, u.avatar_url as author_avatar,
-      COUNT(DISTINCT c.id) as comments_count
+      c.name as category,
+      c.slug as category_slug,
+      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
     FROM posts p
     LEFT JOIN users u ON p.author_id = u.id
-    LEFT JOIN comments c ON p.id = c.post_id
+    LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.status = 'published'
     GROUP BY p.id
     ORDER BY p.created_at DESC
-  `;
-  const result = queryD1Database(query);
-  return result ? result[0].results : [];
+    LIMIT ? OFFSET ?
+  `).bind(limit, offset).all();
+  return posts;
 }
 
-// 查询文章详情
-function getPostBySlug(slug) {
-  const query = `
-    SELECT 
-      p.id, p.title, p.content, p.slug, p.created_at, p.views, p.likes,
-      u.username as author_name, u.avatar_url as author_avatar
+/**
+ * 获取文章详情
+ * @param {D1Database} db - D1 数据库实例
+ * @param {string} slug - 文章 slug
+ * @returns {Promise<Object|null>} 文章详情
+ */
+export async function getPostBySlug(db, slug) {
+  const post = await db.prepare(`
+    SELECT
+      p.id, p.title, p.content, p.slug, p.created_at, p.updated_at, p.views, p.likes,
+      u.username as author_name, u.avatar_url as author_avatar,
+      c.name as category,
+      GROUP_CONCAT(t.name) as tags
     FROM posts p
     LEFT JOIN users u ON p.author_id = u.id
-    WHERE p.slug = '${slug}'
-  `;
-  const postResult = queryD1Database(query);
-  if (!postResult || postResult[0].results.length === 0) {
-    throw new Error('文章未找到');
+    LEFT JOIN categories c ON p.category_id = c.id
+    LEFT JOIN post_tags pt ON p.id = pt.post_id
+    LEFT JOIN tags t ON pt.tag_id = t.id
+    WHERE p.slug = ?
+    GROUP BY p.id
+  `).bind(slug).first();
+  return post;
+}
+
+/**
+ * 获取文章评论
+ * @param {D1Database} db - D1 数据库实例
+ * @param {string} slug - 文章 slug
+ * @returns {Promise<Object[]>} 评论列表
+ */
+export async function getCommentsByPostSlug(db, slug) {
+  const post = await db.prepare(`
+    SELECT id FROM posts WHERE slug = ?
+  `).bind(slug).first();
+
+  if (!post) {
+    return null;
   }
-  const post = postResult[0].results[0];
-  
-  // 获取评论
-  const commentsQuery = `
+
+  const comments = await db.prepare(`
     SELECT
       c.id, c.content, c.created_at,
-      c.author_name, c.author_email
+      c.author_name
     FROM comments c
-    WHERE c.post_id = ${post.id}
+    WHERE c.post_id = ?
     ORDER BY c.created_at DESC
-  `;
-  const commentsResult = queryD1Database(commentsQuery);
-  return { ...post, comments: commentsResult ? commentsResult[0].results : [] };
+  `).bind(post.id).all();
+  return comments;
 }
 
-// 查询用户信息
-function getUserById(userId) {
-  const query = `
-    SELECT username
-    FROM users
-    WHERE id = ${userId}
-  `;
-  const result = queryD1Database(query);
-  if (result && result[0] && result[0].results && result[0].results.length > 0) {
-    return result[0].results[0];
+/**
+ * 创建评论
+ * @param {D1Database} db - D1 数据库实例
+ * @param {string} slug - 文章 slug
+ * @param {string} content - 评论内容
+ * @param {string} authorName - 作者名称
+ * @returns {Promise<Object>} 操作结果
+ */
+export async function createComment(db, slug, content, authorName = "anonymous") {
+  const post = await db.prepare(`
+    SELECT id FROM posts WHERE slug = ?
+  `).bind(slug).first();
+
+  if (!post) {
+    return null;
   }
-  return null;
+
+  await db.prepare(`
+    INSERT INTO comments (post_id, author_name, content)
+    VALUES (?, ?, ?)
+  `).bind(post.id, authorName, content).run();
+  return { message: 'Comment created successfully' };
 }
 
-// 查询用户以验证登录
-function getUserForLogin(username, passwordHash) {
-  const query = `
+/**
+ * 获取最近评论
+ * @param {D1Database} db - D1 数据库实例
+ * @param {number} limit - 获取数量限制
+ * @returns {Promise<Object[]>} 最近评论列表
+ */
+export async function getRecentComments(db, limit = 5) {
+  const comments = await db.prepare(`
+    SELECT
+      c.id, c.content, c.created_at, c.author_name, p.title as post_title, p.slug as post_slug
+    FROM comments c
+    LEFT JOIN posts p ON c.post_id = p.id
+    WHERE c.status = 'approved'
+    ORDER BY c.created_at DESC
+    LIMIT ?
+  `).bind(limit).all();
+  return comments;
+}
+
+/**
+ * 获取所有分类
+ * @param {D1Database} db - D1 数据库实例
+ * @returns {Promise<Object[]>} 分类列表
+ */
+export async function getCategories(db) {
+  const categories = await db.prepare(`
+    SELECT
+      c.id, c.name, c.slug,
+      COUNT(p.id) as count
+    FROM categories c
+    LEFT JOIN posts p ON c.id = p.category_id
+    GROUP BY c.id
+    ORDER BY c.name ASC
+  `).all();
+  return categories;
+}
+
+/**
+ * 获取某个分类的所有文章
+ * @param {D1Database} db - D1 数据库实例
+ * @param {string} slug - 分类 slug
+ * @param {number} page - 页码
+ * @param {number} limit - 每页数量
+ * @returns {Promise<Object[]>} 文章列表
+ */
+export async function getPostsByCategorySlug(db, slug, page = 1, limit = 10) {
+  const offset = (Number(page) - 1) * Number(limit);
+  const posts = await db.prepare(`
+    SELECT
+      p.id, p.title, p.content, p.slug, p.created_at, p.views, p.likes,
+      u.username as author_name, u.avatar_url as author_avatar,
+      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
+    FROM posts p
+    LEFT JOIN users u ON p.author_id = u.id
+    LEFT JOIN categories c ON p.category_id = c.id
+    WHERE c.slug = ? AND p.status = 'published'
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(slug, limit, offset).all();
+  return posts;
+}
+
+/**
+ * 搜索文章
+ * @param {D1Database} db - D1 数据库实例
+ * @param {string} query - 搜索关键词
+ * @param {number} limit - 获取数量限制
+ * @returns {Promise<Object[]>} 搜索结果
+ */
+export async function searchPosts(db, query, limit = 5) {
+  const posts = await db.prepare(`
+    SELECT
+      p.id, p.title, p.slug
+    FROM posts p
+    WHERE p.title LIKE ? AND p.status = 'published'
+    LIMIT ?
+  `).bind(`%${query}%`, limit).all();
+  return posts;
+}
+
+/**
+ * 点赞文章
+ * @param {D1Database} db - D1 数据库实例
+ * @param {string} slug - 文章 slug
+ * @returns {Promise<Object>} 操作结果
+ */
+export async function likePost(db, slug) {
+  await db.prepare(`
+    UPDATE posts SET likes = likes + 1 WHERE slug = ?
+  `).bind(slug).run();
+  return { message: 'Post liked successfully' };
+}
+
+/**
+ * 获取站点设置
+ * @param {D1Database} db - D1 数据库实例
+ * @returns {Promise<Object|null>} 站点设置
+ */
+export async function getSiteSettings(db) {
+  const settings = await db.prepare(`
+    SELECT site_title, site_subtitle, footer_main_content, footer_subtitle
+    FROM site_settings
+    LIMIT 1
+  `).first();
+  return settings;
+}
+
+/**
+ * 获取特定标签的文章列表
+ * @param {D1Database} db - D1 数据库实例
+ * @param {string} slug - 标签 slug
+ * @param {number} page - 页码
+ * @param {number} limit - 每页数量
+ * @returns {Promise<Object[]>} 文章列表
+ */
+export async function getPostsByTagSlug(db, slug, page = 1, limit = 10) {
+  const offset = (Number(page) - 1) * Number(limit);
+  const posts = await db.prepare(`
+    SELECT
+      p.id, p.title, p.summary, p.slug, p.created_at, p.views, p.likes,
+      u.username as author_name, u.avatar_url as author_avatar,
+      c.name as category,
+      c.slug as category_slug,
+      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count
+    FROM posts p
+    LEFT JOIN users u ON p.author_id = u.id
+    LEFT JOIN categories c ON p.category_id = c.id
+    LEFT JOIN post_tags pt ON p.id = pt.post_id
+    LEFT JOIN tags t ON pt.tag_id = t.id
+    WHERE REPLACE(LOWER(t.slug), '.', '') = REPLACE(LOWER(?), '.', '') AND p.status = 'published'
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(slug, limit, offset).all();
+  return posts;
+}
+
+/**
+ * 验证用户登录
+ * @param {D1Database} db - D1 数据库实例
+ * @param {string} username - 用户名
+ * @param {string} passwordHash - 密码哈希
+ * @returns {Promise<Object|null>} 用户信息
+ */
+export async function getUserForLogin(db, username, passwordHash) {
+  const user = await db.prepare(`
     SELECT id, username
     FROM users
-    WHERE username = '${username}' AND password_hash = '${passwordHash}'
-  `;
-  const result = queryD1Database(query);
-  if (result && result[0].results && result[0].results.length > 0) {
-    return result[0].results[0];
-  }
-  return null;
+    WHERE username = ? AND password_hash = ?
+  `).bind(username, passwordHash).first();
+  return user;
 }
 
-// 导出函数以便在API层中使用
-module.exports = {
-  getPosts,
-  getPostBySlug,
-  getUserById,
-  getUserForLogin
-};
+/**
+ * 根据用户ID获取用户信息
+ * @param {D1Database} db - D1 数据库实例
+ * @param {number} userId - 用户ID
+ * @returns {Promise<Object|null>} 用户信息
+ */
+export async function getUserById(db, userId) {
+  const user = await db.prepare(`
+    SELECT username
+    FROM users
+    WHERE id = ?
+  `).bind(userId).first();
+  return user;
+}

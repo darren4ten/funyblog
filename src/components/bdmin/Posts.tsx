@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getApiBaseUrl } from '../../lib/env';
+import PostEditor from './PostEditor';
 
 export default function Posts() {
+  const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -40,6 +42,14 @@ export default function Posts() {
     router.push('/bdmin/posts/edit');
   };
 
+  if (editingPostId) {
+    return (
+      <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
+        <PostEditor postId={editingPostId} onClose={() => setEditingPostId(null)} />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-4">文章管理</h2>
@@ -70,7 +80,7 @@ export default function Posts() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.category}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.created_at}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <Link href={`/bdmin/posts/edit?id=${post.id}`} className="text-indigo-600 hover:text-indigo-900">编辑</Link>
+                  <button onClick={() => setEditingPostId(post.id)} className="text-indigo-600 hover:text-indigo-900">编辑</button>
                   <button className="ml-2 text-red-600 hover:text-red-900">删除</button>
                 </td>
               </tr>
@@ -106,6 +116,11 @@ export default function Posts() {
           </button>
         </nav>
       </div>
+      {editingPostId ? (
+        <div className="mt-6">
+          <PostEditor postId={editingPostId} onClose={() => setEditingPostId(null)} />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -12,10 +12,7 @@ export default function ConsolePage() {
   const [currentUser, setCurrentUser] = useState("未知用户");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>(() => {
-    const hash = window.location.hash.substring(1);
-    return hash || "console";
-  });
+  const [activeTab, setActiveTab] = useState("console");
   const router = useRouter();
 
   useEffect(() => {
@@ -77,6 +74,13 @@ export default function ConsolePage() {
     fetchSiteName();
     checkAuth();
   }, [router]);
+
+  useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+      setActiveTab(hash);
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');

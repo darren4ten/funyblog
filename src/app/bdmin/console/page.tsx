@@ -184,7 +184,7 @@ export default function ConsolePage() {
       {/* 主内容区域 */}
       <div className="flex flex-1">
         {/* 左侧菜单 */}
-        <aside className="w-64 bg-white shadow">
+        <aside className="w-[214px] bg-white shadow">
           <nav className="px-4 py-5 space-y-1">
             <button onClick={() => handleMenuClick('console')} className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'console' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-700'}`}>
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
@@ -210,7 +210,7 @@ export default function ConsolePage() {
         </aside>
         
         {/* 右侧内容区域 */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-2">
           {renderContent()}
         </div>
       </div>

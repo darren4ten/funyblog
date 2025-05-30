@@ -12,7 +12,10 @@ export default function ConsolePage() {
   const [currentUser, setCurrentUser] = useState("未知用户");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("console");
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const hash = window.location.hash.substring(1);
+    return hash || "console";
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -83,6 +86,7 @@ export default function ConsolePage() {
 
   const handleMenuClick = (tab: string) => {
     setActiveTab(tab);
+    window.location.hash = tab;
   };
 
   if (loading) {

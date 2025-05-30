@@ -11,11 +11,17 @@ export default function Posts() {
   const [posts, setPosts] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [refreshKey, setRefreshKey] = useState(0);
   const router = useRouter();
+
+  const handlePostSaved = () => {
+    setEditingPostId(null);
+    setRefreshKey(prevKey => prevKey + 1);
+  };
 
   useEffect(() => {
     fetchPosts();
-  }, [currentPage]);
+  }, [currentPage, refreshKey]);
 
   const fetchPosts = async () => {
     try {
@@ -45,7 +51,7 @@ export default function Posts() {
   if (editingPostId) {
     return (
       <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
-        <PostEditor postId={editingPostId} onClose={() => setEditingPostId(null)} />
+        <PostEditor postId={editingPostId} onClose={() => handlePostSaved()} />
       </div>
     );
   }

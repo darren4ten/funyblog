@@ -34,7 +34,7 @@ export default function PostEditor({ postId, onClose }: PostEditorProps) {
 
   const fetchPost = async (id: number) => {
     try {
-      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const res = await fetch(`${getApiBaseUrl()}/api/bdmin/posts/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -60,12 +60,12 @@ export default function PostEditor({ postId, onClose }: PostEditorProps) {
   const handleSave = async () => {
     try {
       const method = postId ? 'PUT' : 'POST';
-      const url = postId ? `${getApiBaseUrl()}/api/posts/${postId}` : `${getApiBaseUrl()}/api/posts`;
+      const url = postId ? `${getApiBaseUrl()}/api/bdmin/posts/${postId}` : `${getApiBaseUrl()}/api/bdmin/posts`;
       const res = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({
           title,

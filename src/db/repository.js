@@ -294,3 +294,139 @@ export async function getPostById(db, id) {
   `).bind(id).first();
   return post;
 }
+
+/**
+ * 更新文章
+ * @param {D1Database} db - D1 数据库实例
+ * @param {number} id - 文章 ID
+ * @param {string} title - 文章标题
+ * @param {string} content - 文章内容
+ * @param {string} category - 文章分类
+ * @param {string[]} tags - 文章标签
+ * @returns {Promise<Object>} 操作结果
+ */
+export async function updatePost(db, id, title, content, category, tags) {
+  // 更新文章基本信息
+  await db.prepare(`
+    UPDATE posts
+    SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).bind(title, content, id).run();
+
+  // 更新分类
+  if (category) {
+    const categoryResult = await db.prepare(`
+      SELECT id FROM categories WHERE name = ? OR slug = ?
+    `).bind(category, category).first();
+    
+    if (categoryResult) {
+      await db.prepare(`
+        UPDATE posts
+        SET category_id = ?
+        WHERE id = ?
+      `).bind(categoryResult.id, id).run();
+    }
+  }
+
+  // 更新标签
+  if (tags && tags.length > 0) {
+    // 先删除现有标签
+    await db.prepare(`
+      DELETE FROM post_tags WHERE post_id = ?
+    `).bind(id).run();
+
+    // 然后添加新标签
+    for (const tag of tags) {
+      if (tag.trim()) {
+        // 检查标签是否存在，不存在则创建
+        let tagResult = await db.prepare(`
+          SELECT id FROM tags WHERE name = ? OR slug = ?
+        `).bind(tag, tag).first();
+        
+        if (!tagResult) {
+          await db.prepare(`
+            INSERT INTO tags (name, slug) VALUES (?, ?)
+          `).bind(tag, tag.toLowerCase().replace(/\s+/g, '-')).run();
+          
+          tagResult = await db.prepare(`
+            SELECT id FROM tags WHERE name = ?
+          `).bind(tag).first();
+        }
+        
+        if (tagResult) {
+          await db.prepare(`
+            INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)
+          `).bind(id, tagResult.id).run();
+        }
+      }
+    }
+  }
+
+  return { message: 'Post updated successfully', id };
+}
+
+/**
+ * 创建文章
+ * @param {D1Database} db - D1 数据库实例
+ * @param {string} title - 文章标题
+ * @param {string} content - 文章内容
+ * @param {string} category - 文章分类
+ * @param {string[]} tags - 文章标签
+ * @returns {Promise<Object>} 操作结果
+ */
+export async function createPost(db, title, content, category, tags) {
+  // 创建文章
+  const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const result = await db.prepare(`
+    INSERT INTO posts (title, content, slug, author_id, status)
+    VALUES (?, ?, ?, 1, 'published')
+    RETURNING id
+  `).bind(title, content, slug).first();
+
+  const postId = result.id;
+
+  // 设置分类
+  if (category) {
+    const categoryResult = await db.prepare(`
+      SELECT id FROM categories WHERE name = ? OR slug = ?
+    `).bind(category, category).first();
+    
+    if (categoryResult) {
+      await db.prepare(`
+        UPDATE posts
+        SET category_id = ?
+        WHERE id = ?
+      `).bind(categoryResult.id, postId).run();
+    }
+  }
+
+  // 设置标签
+  if (tags && tags.length > 0) {
+    for (const tag of tags) {
+      if (tag.trim()) {
+        // 检查标签是否存在，不存在则创建
+        let tagResult = await db.prepare(`
+          SELECT id FROM tags WHERE name = ? OR slug = ?
+        `).bind(tag, tag).first();
+        
+        if (!tagResult) {
+          await db.prepare(`
+            INSERT INTO tags (name, slug) VALUES (?, ?)
+          `).bind(tag, tag.toLowerCase().replace(/\s+/g, '-')).run();
+          
+          tagResult = await db.prepare(`
+            SELECT id FROM tags WHERE name = ?
+          `).bind(tag).first();
+        }
+        
+        if (tagResult) {
+          await db.prepare(`
+            INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)
+          `).bind(postId, tagResult.id).run();
+        }
+      }
+    }
+  }
+
+  return { message: 'Post created successfully', id: postId };
+}

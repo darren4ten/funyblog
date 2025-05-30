@@ -3,7 +3,7 @@ import { Hono } from 'hono'
 import { handle } from 'hono/cloudflare-pages'
 import { cors } from 'hono/cors'
 import type { Context } from 'hono'
-import { getPosts, getPostBySlug, getCommentsByPostSlug, createComment, getRecentComments, getCategories, getPostsByCategorySlug, searchPosts, likePost, getSiteSettings, getPostsByTagSlug, getUserForLogin, getUserById, getPostById } from './db/repository.js'
+import { getPosts, getPostBySlug, getCommentsByPostSlug, createComment, getRecentComments, getCategories, getPostsByCategorySlug, searchPosts, likePost, getSiteSettings, getPostsByTagSlug, getUserForLogin, getUserById, getPostById, updatePost, createPost } from './db/repository.js'
 
 // 扩展 Hono 上下文类型以包含自定义变量
 interface CustomContext extends Context {
@@ -109,6 +109,25 @@ app.get('/api/bdmin/posts/:id', async (c: Context<{ Bindings: Bindings }>) => {
     return c.json({ error: 'Post not found' }, 404)
   }
   return c.json(post)
+})
+
+// 更新文章 (for admin)
+app.put('/api/bdmin/posts/:id', async (c: Context<{ Bindings: Bindings }>) => {
+  const { id } = c.req.param()
+  const { title, content, category, tags } = await c.req.json()
+  const post = await getPostById(c.env.DB, parseInt(id))
+  if (!post) {
+    return c.json({ error: 'Post not found' }, 404)
+  }
+  const result = await updatePost(c.env.DB, parseInt(id), title, content, category, tags)
+  return c.json(result)
+})
+
+// 创建文章 (for admin)
+app.post('/api/bdmin/posts', async (c: Context<{ Bindings: Bindings }>) => {
+  const { title, content, category, tags } = await c.req.json()
+  const result = await createPost(c.env.DB, title, content, category, tags)
+  return c.json(result)
 })
 
 // 获取评论

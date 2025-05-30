@@ -108,7 +108,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 />
               </div>
               <div className="prose max-w-none">
-                <p>{post.content}</p>
+                <div dangerouslySetInnerHTML={{ __html: post.content }} />
               </div>
 
               {/* 文章底部信息 */}

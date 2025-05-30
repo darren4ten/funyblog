@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { useRouter } from 'next/navigation';
 import { getApiBaseUrl } from '../../lib/env';
 
@@ -103,11 +105,32 @@ export default function PostEditor({ postId, onClose }: PostEditorProps) {
         </div>
         <div className="mb-4">
           <label htmlFor="content" className="block text-sm font-medium text-gray-700">内容</label>
-          <textarea
-            id="content"
+          <ReactQuill
+            theme="snow"
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={10}
+            onChange={setContent}
+            modules={{
+              toolbar: [
+                [{ 'header': '1'}, {'header': '2'}, { 'font': [] }],
+                [{size: []}],
+                ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{'list': 'ordered'}, {'list': 'bullet'},
+                 {'indent': '-1'}, {'indent': '+1'}],
+                ['link', 'image', 'video'],
+                ['clean']
+              ],
+              clipboard: {
+                matchVisual: false,
+              }
+            }}
+            formats={[
+              'header', 'font', 'size',
+              'bold', 'italic', 'underline', 'strike', 'blockquote',
+              'color', 'background',
+              'list', 'bullet', 'indent',
+              'link', 'image', 'video'
+            ]}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
           />
         </div>

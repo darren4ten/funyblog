@@ -27,7 +27,27 @@ export default function ConsolePage() {
     // 获取当前用户信息并校验权限
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/admin/current-user');
+        // 从 Cookie 中读取 token
+        const cookies = document.cookie.split('; ');
+        const tokenCookie = cookies.find(row => row.startsWith('auth_token='));
+        const token = tokenCookie ? tokenCookie.split('=')[1] : null;
+        
+        if (!token) {
+          setIsAuthenticated(false);
+          alert('未登录，3秒后跳转到登录页面');
+          setTimeout(() => {
+            router.push('/bdmin/login');
+          }, 3000);
+          return;
+        }
+        
+        const res = await fetch('http://127.0.0.1:8787/api/bdmin/current-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token }),
+        });
         if (res.ok) {
           const data = await res.json() as { username?: string };
           setCurrentUser(data.username || "未知用户");
@@ -68,7 +88,7 @@ export default function ConsolePage() {
         <Link href="/" className="text-xl font-bold">{siteName}</Link>
         <div className="text-sm">您好，{currentUser}</div>
       </div>
-      
+
       <div className="mt-12 flex flex-1">
         {/* Sidebar */}
         <div className="w-64 bg-white shadow-md">
@@ -99,7 +119,7 @@ export default function ConsolePage() {
             </ul>
           </nav>
         </div>
-        
+
         {/* Main Content */}
         <div className="flex-1 p-6">
           <h1 className="text-2xl font-bold mb-4">欢迎使用后台管理</h1>

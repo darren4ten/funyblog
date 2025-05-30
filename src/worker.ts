@@ -2,7 +2,6 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/cloudflare-pages'
 import { cors } from 'hono/cors'
-import { jwt } from 'hono/jwt'
 import type { Context } from 'hono'
 
 type Bindings = {
@@ -12,8 +11,13 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-// 配置 CORS
-app.use('*', cors())
+ // 配置 CORS
+app.use('*', cors({
+  origin: 'http://localhost:3000',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}))
 
  // JWT 中间件 - 在本地开发环境中暂时禁用
  // app.use('/api/*', jwt({
@@ -98,7 +102,6 @@ app.get('/api/posts/:slug/comments', async (c: Context<{ Bindings: Bindings }>) 
 app.post('/api/posts/:slug/comments', async (c: Context<{ Bindings: Bindings }>) => {
   const { slug } = c.req.param()
   const { content } = await c.req.json()
-  const userId = c.get('jwtPayload').sub
 
   const post = await c.env.DB.prepare(`
     SELECT id FROM posts WHERE slug = ?
@@ -242,6 +245,85 @@ app.get('/api/tags/:slug/posts', async (c: Context<{ Bindings: Bindings }>) => {
 
   return c.json(posts)
 })
+
+// 登录接口
+app.post('/api/bdmin/login', async (c: Context<{ Bindings: Bindings }>) => {
+  try {
+    const { username, password } = await c.req.json();
+    if (!username || !password) {
+      return c.json({ error: '用户名和密码不能为空' }, 400);
+    }
+
+    // 使用Web Crypto API进行密码哈希处理
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const passwordHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    const user = await c.env.DB.prepare(`
+      SELECT id, username
+      FROM users
+      WHERE username = ? AND password_hash = ?
+    `).bind(username, passwordHash).first();
+
+    if (!user) {
+      return c.json({ error: '用户名或密码错误' }, 401);
+    }
+
+    const userId = user.id;
+    const userName = user.username;
+    // 使用简单的 base64 编码生成令牌，适用于 Cloudflare Workers 环境
+    const payload = JSON.stringify({ userId, username: userName, role: 'admin', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) });
+    const token = btoa(payload);
+    const response = c.json({ message: '登录成功', token: token }, 200);
+    response.headers.set('Set-Cookie', `auth_token=${token}; Path=/; Max-Age=${60 * 60 * 24 * 7}; HttpOnly`);
+    return response;
+  } catch (error) {
+    console.error('登录错误:', error);
+    return c.json({ error: '服务器错误' }, 500);
+  }
+});
+
+// 获取当前用户信息接口
+app.post('/api/bdmin/current-user', async (c: Context<{ Bindings: Bindings }>) => {
+  try {
+    const { token } = await c.req.json();
+    if (!token) {
+      return c.json({ error: '未登录' }, 401);
+    }
+
+    let decoded;
+    try {
+      const decodedPayload = atob(token);
+      decoded = JSON.parse(decodedPayload);
+      if (!decoded.userId || !decoded.username || !decoded.role || !decoded.iat || !decoded.exp) {
+        return c.json({ error: '无效的令牌格式' }, 401);
+      }
+      if (decoded.exp < Math.floor(Date.now() / 1000)) {
+        return c.json({ error: '令牌已过期' }, 401);
+      }
+    } catch (err) {
+      console.error('令牌解码或解析错误:', err);
+      return c.json({ error: '无效的令牌' }, 401);
+    }
+
+    const userId = decoded.userId;
+    const user = await c.env.DB.prepare(`
+      SELECT username
+      FROM users
+      WHERE id = ?
+    `).bind(userId).first();
+
+    if (user) {
+      return c.json({ username: user.username }, 200);
+    } else {
+      return c.json({ error: '用户未找到' }, 404);
+    }
+  } catch (error) {
+    console.error('获取当前用户信息出错:', error);
+    return c.json({ error: '服务器错误' }, 500);
+  }
+});
 
 export default {
   fetch: (req: Request, env: any, ctx: any) => {

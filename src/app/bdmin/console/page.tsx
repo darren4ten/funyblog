@@ -1,9 +1,10 @@
 "use client";
+
+import { ApiBaseUrl, getApiBaseUrl } from '../../../lib/env';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '../../../lib/api';
-
 export default function ConsolePage() {
   const [siteName, setSiteName] = useState("我的博客");
   const [currentUser, setCurrentUser] = useState("未知用户");
@@ -39,7 +40,7 @@ export default function ConsolePage() {
           return;
         }
         
-        const res = await fetchWithAuth('http://127.0.0.1:8787/api/bdmin/current-user', {
+        const res = await fetchWithAuth(`${getApiBaseUrl()}/api/bdmin/current-user`, {
           method: 'POST',
           body: JSON.stringify({ token }),
         });

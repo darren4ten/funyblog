@@ -1,8 +1,9 @@
 "use client";
+
+import { ApiBaseUrl, getApiBaseUrl } from '../../../lib/env';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +17,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8787/api/bdmin/login', {
+      const res = await fetch(`${getApiBaseUrl()}/api/bdmin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

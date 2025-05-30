@@ -1,5 +1,6 @@
 'use client'
 
+import { ApiBaseUrl, getApiBaseUrl } from '../lib/env';
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 
@@ -15,7 +16,7 @@ export default function RecentPosts() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8787/api/posts?limit=5');
+        const res = await fetch(`${getApiBaseUrl()}/api/posts?limit=5`);
         if (!res.ok) throw new Error('网络请求失败');
         const data = await res.json() as Record<string, any>;
         setPosts(data.results || data || []);

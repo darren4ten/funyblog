@@ -1,3 +1,4 @@
+import { ApiBaseUrl, getApiBaseUrl } from '../../../lib/env';
 import Link from 'next/link'
 import { FaEye, FaHeart, FaComment, FaUser, FaCalendarAlt } from 'react-icons/fa'
 import Banner from '@/components/Banner'
@@ -12,7 +13,7 @@ interface CategoryPageProps {
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const getCategoryPosts = async (slug: string): Promise<any> => {
     try {
-      const res = await fetch(`http://127.0.0.1:8787/api/categories/${slug}/posts`);
+      const res = await fetch(`${getApiBaseUrl()}/api/categories/${slug}/posts`);
       if (!res.ok) throw new Error('网络请求失败');
       const data = await res.json() as Record<string, any>;
       console.log('Fetched category posts:', data); // 调试信息
@@ -25,7 +26,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   const getCategoryInfo = async (slug: string): Promise<any> => {
     try {
-      const res = await fetch(`http://127.0.0.1:8787/api/categories`);
+      const res = await fetch(`${getApiBaseUrl()}/api/categories`);
       if (!res.ok) throw new Error('网络请求失败');
       const data = await res.json() as Record<string, any>;
       const categories = data.results || data || [];

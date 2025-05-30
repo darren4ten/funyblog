@@ -1,3 +1,4 @@
+import { ApiBaseUrl, getApiBaseUrl } from '../lib/env';
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import '@/styles/globals.css'
@@ -6,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export async function getSiteSettings() {
   try {
-    const res = await fetch('http://127.0.0.1:8787/api/site-settings');
+    const res = await fetch(`${getApiBaseUrl()}/api/site-settings`);
     if (!res.ok) throw new Error('网络请求失败');
     const data = await res.json() as Record<string, any>;
     return data;

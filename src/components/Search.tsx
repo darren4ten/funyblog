@@ -1,5 +1,6 @@
 'use client'
 
+import { ApiBaseUrl, getApiBaseUrl } from '../lib/env';
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
@@ -33,7 +34,7 @@ export default function Search() {
     const fetchResults = async () => {
       setIsLoading(true)
       try {
-        const res = await fetch(`http://127.0.0.1:8787/api/search?query=${encodeURIComponent(query)}&limit=5`)
+        const res = await fetch(`${getApiBaseUrl()}/api/search?query=${encodeURIComponent(query)}&limit=5`)
         if (!res.ok) throw new Error('网络请求失败')
         const data = await res.json() as Record<string, any>
         setResults(data.results || data || [])

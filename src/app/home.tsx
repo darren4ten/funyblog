@@ -1,3 +1,4 @@
+import { ApiBaseUrl, getApiBaseUrl } from '../lib/env';
 import Banner from '@/components/Banner'
 import PostCard from '@/components/PostCard'
 import Sidebar from '@/components/Sidebar'
@@ -50,7 +51,7 @@ const FALLBACK_POSTS: Post[] = [
 async function getPosts(): Promise<Post[]> {
   try {
     // 通过API获取文章列表
-    const res = await fetch('http://127.0.0.1:8787/api/posts');
+    const res = await fetch(`${getApiBaseUrl()}/api/posts`);
     if (!res.ok) throw new Error('网络请求失败');
     const data = (await res.json()) as any;
     // 兼容 Cloudflare Worker 返回格式

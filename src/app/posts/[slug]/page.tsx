@@ -1,3 +1,4 @@
+import { ApiBaseUrl, getApiBaseUrl } from '../../../lib/env';
 import Image from 'next/image'
 import Link from 'next/link'
 import { FaEye, FaHeart, FaComment, FaUser, FaCalendarAlt } from 'react-icons/fa'
@@ -14,7 +15,7 @@ interface PostPageProps {
 export default async function PostPage({ params }: PostPageProps) {
   const getPost = async (slug: string): Promise<any> => {
     try {
-      const res = await fetch(`http://127.0.0.1:8787/api/posts/${slug}`);
+      const res = await fetch(`${getApiBaseUrl()}/api/posts/${slug}`);
       if (!res.ok) throw new Error('网络请求失败');
       const data = await res.json() as Record<string, any>;
       console.log('Fetched post data:', data); // 调试信息
@@ -37,7 +38,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
   const getComments = async (slug: string): Promise<any> => {
     try {
-      const res = await fetch(`http://127.0.0.1:8787/api/posts/${slug}/comments`);
+      const res = await fetch(`${getApiBaseUrl()}/api/posts/${slug}/comments`);
       if (!res.ok) throw new Error('网络请求失败');
       const data = await res.json() as Record<string, any>;
       console.log('Fetched comments data:', data); // 调试信息

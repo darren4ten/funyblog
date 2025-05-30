@@ -1,5 +1,6 @@
 'use client'
 
+import { ApiBaseUrl, getApiBaseUrl } from '../lib/env';
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 
@@ -16,7 +17,7 @@ export default function Categories() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8787/api/categories');
+        const res = await fetch(`${getApiBaseUrl()}/api/categories`);
         if (!res.ok) throw new Error('网络请求失败');
         const data = await res.json() as Record<string, any>;
         setCategories(data.results || data || []);

@@ -25,7 +25,13 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        router.push('/bdmin/console');
+        const data = await res.json() as { token?: string, error?: string };
+        if (data.token) {
+          document.cookie = `auth_token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7};`;
+          router.push('/bdmin/console');
+        } else {
+          setError('登录成功但未获取到令牌');
+        }
       } else {
         const data = await res.json() as { error?: string };
         setError(data.error || '登录失败');

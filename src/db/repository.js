@@ -83,9 +83,10 @@ export async function getCommentsByPostSlug(db, slug) {
  * @param {string} slug - 文章 slug
  * @param {string} content - 评论内容
  * @param {string} authorName - 作者名称
+ * @param {string} authorEmail - 作者邮箱
  * @returns {Promise<Object>} 操作结果
  */
-export async function createComment(db, slug, content, authorName = "anonymous") {
+export async function createComment(db, slug, content, authorName = "anonymous", authorEmail = "") {
   const post = await db.prepare(`
     SELECT id FROM posts WHERE slug = ?
   `).bind(slug).first();
@@ -95,9 +96,9 @@ export async function createComment(db, slug, content, authorName = "anonymous")
   }
 
   await db.prepare(`
-    INSERT INTO comments (post_id, author_name, content)
-    VALUES (?, ?, ?)
-  `).bind(post.id, authorName, content).run();
+    INSERT INTO comments (post_id, author_name, content, author_email)
+    VALUES (?, ?, ?, ?)
+  `).bind(post.id, authorName, content, authorEmail).run();
   return { message: 'Comment created successfully' };
 }
 

@@ -143,8 +143,8 @@ app.get('/api/posts/:slug/comments', async (c: Context<{ Bindings: Bindings }>) 
 // 创建评论
 app.post('/api/posts/:slug/comments', async (c: Context<{ Bindings: Bindings }>) => {
   const { slug } = c.req.param()
-  const { content } = await c.req.json()
-  const result = await createComment(c.env.DB, slug, content)
+  const { content, author_name, author_email } = await c.req.json()
+  const result = await createComment(c.env.DB, slug, content, author_name || "anonymous", author_email || "")
   if (!result) {
     return c.json({ error: 'Post not found' }, 404)
   }

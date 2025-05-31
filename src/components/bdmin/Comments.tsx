@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { getApiBaseUrl } from '../../lib/env';
 
 export default function Comments() {
@@ -103,7 +104,13 @@ export default function Comments() {
                   <div className="text-sm text-gray-900">{comment.content}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{comment.author_name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{comment.post_title}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <Link href={`/posts/${comment.post_slug}#comments`} className="text-indigo-600 hover:text-indigo-900">
+                    {comment.post_title && comment.post_title.length > 16
+                      ? `${comment.post_title.substring(0, 16)}...`
+                      : comment.post_title}
+                  </Link>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{comment.created_at}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{comment.status}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

@@ -170,16 +170,16 @@ app.get('/api/bdmin/comments', async (c: Context<{ Bindings: Bindings }>) => {
   } else if (Array.isArray(commentsData)) {
     comments = commentsData;
   }
-  // 暂时设置默认值以解决性能问题
-  const totalCount = comments.length > 0 ? 100 : 0 // 假设有100条评论，实际应根据需求调整
-  const totalPages = Math.ceil(totalCount / limitNum) || 1
+  // 不再查询总评论条数，设置默认值
+  const hasPrevPage = pageNum > 1
+  const hasNextPage = comments.length === limitNum // 如果返回的评论数等于限制数，则可能有下一页
   return c.json({
     comments,
     pagination: {
       currentPage: pageNum,
-      totalPages,
-      totalCount,
-      limit: limitNum
+      limit: limitNum,
+      hasPrevPage,
+      hasNextPage
     }
   })
 })

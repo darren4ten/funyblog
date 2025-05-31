@@ -9,25 +9,37 @@ export default function Comments() {
   const [totalPages, setTotalPages] = useState(1);
   const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [limit, setLimit] = useState(() => {
+    const savedLimit = localStorage.getItem('commentsPerPage');
+    return savedLimit ? parseInt(savedLimit, 10) : 20;
+  });
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('commentsPerPage', limit.toString());
+  }, [limit]);
 
   useEffect(() => {
     fetchComments();
-  }, [currentPage, refreshKey]);
+  }, [currentPage, refreshKey, limit]);
 
   const fetchComments = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${getApiBaseUrl()}/api/bdmin/comments?page=${currentPage}&limit=20`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/bdmin/comments?page=${currentPage}&limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
       });
       if (!res.ok) throw new Error('网络请求失败');
-      const response = await res.json() as { comments: any[], pagination: { totalPages: number, currentPage: number, totalCount: number, limit: number } };
+      const response = await res.json() as { comments: any[], pagination: { currentPage: number, limit: number, hasPrevPage: boolean, hasNextPage: boolean } };
       console.log('API Response:', response); // 调试输出
       const commentsData = Array.isArray(response.comments) ? response.comments : [];
       setComments(commentsData);
-      setTotalPages(response.pagination ? response.pagination.totalPages : 1);
+      setTotalPages(1); // 由于不再使用 totalPages，我们设置为默认值
+      setHasPrevPage(response.pagination.hasPrevPage);
+      setHasNextPage(response.pagination.hasNextPage);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -38,6 +50,11 @@ export default function Comments() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleLimitChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setLimit(parseInt(event.target.value));
+    setCurrentPage(1); // 重置到第一页
   };
 
   const handleStatusChange = async (commentId: number, status: string) => {
@@ -100,30 +117,49 @@ export default function Comments() {
         </table>
       </div>
 
-      <div className="mt-4 flex justify-center">
+      <div className="mt-4 flex justify-center items-center">
+        <div className="mr-4">
+          <label htmlFor="limit" className="mr-2 text-sm font-medium text-gray-700">每页条数:</label>
+          <select
+            id="limit"
+            value={limit}
+            onChange={handleLimitChange}
+            className="border border-gray-300 rounded p-1"
+          >
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
         <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
           <button
-            onClick={() => handlePageChange(currentPage - 1)}
+            onClick={() => handlePageChange(1)}
             disabled={currentPage === 1}
             className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
           >
+            首页
+          </button>
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={!hasPrevPage}
+            className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+          >
             上一页
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-            <button
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${currentPage === page ? 'text-indigo-600' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
-              {page}
-            </button>
-          ))}
           <button
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            disabled={!hasNextPage}
+            className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
           >
             下一页
+          </button>
+          <button
+            onClick={() => handlePageChange(totalPages)}
+            disabled={!hasNextPage}
+            className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+          >
+            最后一页
           </button>
         </nav>
       </div>

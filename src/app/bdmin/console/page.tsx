@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '../../../lib/api';
 import Posts from '../../../components/bdmin/Posts';
 
+import Comments from '../../../components/bdmin/Comments';
+
 export default function ConsolePage() {
   const [siteName, setSiteName] = useState("我的博客");
   const [currentUser, setCurrentUser] = useState("未知用户");
@@ -144,12 +146,7 @@ export default function ConsolePage() {
     } else if (activeTab === "posts") {
       return <Posts />;
     } else if (activeTab === "comments") {
-      return (
-        <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">评论管理</h2>
-          <p className="text-gray-500">这里是评论管理的内容。</p>
-        </div>
-      );
+      return <Comments />;
     } else if (activeTab === "settings") {
       return (
         <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">

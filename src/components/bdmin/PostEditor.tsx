@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { getApiBaseUrl } from '../../lib/env';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import 'react-quill/dist/quill.snow.css';
 
 interface PostEditorProps {
   postId?: number;
@@ -90,89 +92,63 @@ export default function PostEditor({ postId, onClose }: PostEditorProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">{postId ? '编辑文章' : '新增文章'}</h2>
-      <form>
-        <div className="mb-4">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">标题</label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="content" className="block text-sm font-medium text-gray-700">内容</label>
-          <ReactQuill
-            theme="snow"
-            value={content}
-            onChange={setContent}
-            modules={{
-              toolbar: [
-                [{ 'header': '1'}, {'header': '2'}, { 'font': [] }],
-                [{size: []}],
-                ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-                [{ 'color': [] }, { 'background': [] }],
-                [{'list': 'ordered'}, {'list': 'bullet'},
-                 {'indent': '-1'}, {'indent': '+1'}],
-                ['link', 'image', 'video'],
-                ['clean']
-              ],
-              clipboard: {
-                matchVisual: false,
-              }
-            }}
-            formats={[
-              'header', 'font', 'size',
-              'bold', 'italic', 'underline', 'strike', 'blockquote',
-              'color', 'background',
-              'list', 'bullet', 'indent',
-              'link', 'image', 'video'
-            ]}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700">分类</label>
-          <input
-            type="text"
-            id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700">标签（用逗号分隔）</label>
-          <input
-            type="text"
-            id="tags"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <div className="flex justify-end space-x-3">
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              取消
-            </button>
-          )}
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">{postId ? '编辑文章' : '新建文章'}</h2>
+      <div className="mb-4">
+        <label htmlFor="title" className="block text-sm font-medium text-gray-700">标题</label>
+        <input
+          type="text"
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        />
+      </div>
+      <div className="mb-4">
+        <label htmlFor="category" className="block text-sm font-medium text-gray-700">分类</label>
+        <input
+          type="text"
+          id="category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        />
+      </div>
+      <div className="mb-4">
+        <label htmlFor="tags" className="block text-sm font-medium text-gray-700">标签 (逗号分隔)</label>
+        <input
+          type="text"
+          id="tags"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        />
+      </div>
+      <div className="mb-4">
+        <label htmlFor="content" className="block text-sm font-medium text-gray-700">内容</label>
+        <ReactQuill
+          value={content}
+          onChange={setContent}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          theme="snow"
+        />
+      </div>
+      <div className="flex justify-end space-x-2">
+        {onClose && (
           <button
-            type="button"
-            onClick={handleSave}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            保存
+            取消
           </button>
-        </div>
-      </form>
+        )}
+        <button
+          onClick={handleSave}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          保存
+        </button>
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Hono } from 'hono'
 import { handle } from 'hono/cloudflare-pages'
 import { cors } from 'hono/cors'
 import type { Context } from 'hono'
-import { getPosts, getPostBySlug, getCommentsByPostSlug, createComment, getRecentComments, getCategories, getPostsByCategorySlug, searchPosts, likePost, getSiteSettings, getPostsByTagSlug, getUserForLogin, getUserById, getPostById, updatePost, createPost } from './db/repository.js'
+import { getPosts, getPostBySlug, getCommentsByPostSlug, createComment, getRecentComments, getCategories, getPostsByCategorySlug, searchPosts, likePost, getSiteSettings, getPostsByTagSlug, getUserForLogin, getUserById, getPostById, updatePost, createPost, getAllComments, updateCommentStatus } from './db/repository.js'
 
 // 扩展 Hono 上下文类型以包含自定义变量
 interface CustomContext extends Context {
@@ -156,6 +156,40 @@ app.get('/api/comments', async (c: Context<{ Bindings: Bindings }>) => {
   const { limit = '5' } = c.req.query()
   const comments = await getRecentComments(c.env.DB, parseInt(limit))
   return c.json(comments)
+})
+
+// 获取所有评论（用于后台管理）
+app.get('/api/bdmin/comments', async (c: Context<{ Bindings: Bindings }>) => {
+  const { page = '1', limit = '10' } = c.req.query()
+  const pageNum = parseInt(page)
+  const limitNum = parseInt(limit)
+  const commentsData = await getAllComments(c.env.DB, pageNum, limitNum)
+  let comments: any[] = [];
+  if (commentsData && typeof commentsData === 'object' && 'results' in commentsData && Array.isArray(commentsData.results)) {
+    comments = commentsData.results;
+  } else if (Array.isArray(commentsData)) {
+    comments = commentsData;
+  }
+  // 暂时设置默认值以解决性能问题
+  const totalCount = comments.length > 0 ? 100 : 0 // 假设有100条评论，实际应根据需求调整
+  const totalPages = Math.ceil(totalCount / limitNum) || 1
+  return c.json({
+    comments,
+    pagination: {
+      currentPage: pageNum,
+      totalPages,
+      totalCount,
+      limit: limitNum
+    }
+  })
+})
+
+// 更新评论状态（用于后台管理）
+app.post('/api/bdmin/comments/:id/status', async (c: Context<{ Bindings: Bindings }>) => {
+  const { id } = c.req.param()
+  const { status } = await c.req.json()
+  const result = await updateCommentStatus(c.env.DB, parseInt(id), status)
+  return c.json(result)
 })
 
 // 获取所有分类

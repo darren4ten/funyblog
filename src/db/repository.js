@@ -71,7 +71,7 @@ export async function getCommentsByPostSlug(db, slug) {
       c.id, c.content, c.created_at,
       c.author_name
     FROM comments c
-    WHERE c.post_id = ?
+    WHERE c.post_id = ? AND c.status = 'approved'
     ORDER BY c.created_at DESC
   `).bind(post.id).all();
   return comments;
@@ -96,8 +96,8 @@ export async function createComment(db, slug, content, authorName = "anonymous",
   }
 
   await db.prepare(`
-    INSERT INTO comments (post_id, author_name, content, author_email)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO comments (post_id, author_name, content, author_email, status)
+    VALUES (?, ?, ?, ?, 'pending')
   `).bind(post.id, authorName, content, authorEmail).run();
   return { message: 'Comment created successfully' };
 }
@@ -434,4 +434,38 @@ export async function createPost(db, title, content, category, tags) {
   }
 
   return { message: 'Post created successfully', id: postId };
+}
+
+/**
+ * 获取所有评论
+ * @param {D1Database} db - D1 数据库实例
+ * @param {number} page - 页码
+ * @param {number} limit - 每页数量
+ * @returns {Promise<Object[]>} 评论列表
+ */
+export async function getAllComments(db, page = 1, limit = 10) {
+  const offset = (Number(page) - 1) * Number(limit);
+  const comments = await db.prepare(`
+    SELECT
+      c.id, c.content, c.created_at, c.author_name, c.status, p.title as post_title, p.slug as post_slug
+    FROM comments c
+    LEFT JOIN posts p ON c.post_id = p.id
+    ORDER BY c.created_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(limit, offset).all();
+  return comments;
+}
+
+/**
+ * 更新评论状态
+ * @param {D1Database} db - D1 数据库实例
+ * @param {number} commentId - 评论ID
+ * @param {string} status - 评论状态
+ * @returns {Promise<Object>} 操作结果
+ */
+export async function updateCommentStatus(db, commentId, status) {
+  await db.prepare(`
+    UPDATE comments SET status = ? WHERE id = ?
+  `).bind(status, commentId).run();
+  return { message: 'Comment status updated successfully' };
 }

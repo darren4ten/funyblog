@@ -84,6 +84,28 @@ export default function ConsolePage() {
     }
   }, []);
 
+  useEffect(() => {
+    let title = "管理后台 - " + siteName;
+    switch (activeTab) {
+      case "console":
+        title = "控制台 - " + siteName;
+        break;
+      case "posts":
+        title = "文章管理 - " + siteName;
+        break;
+      case "comments":
+        title = "评论管理 - " + siteName;
+        break;
+      case "settings":
+        title = "站点设置 - " + siteName;
+        break;
+      case "plugins":
+        title = "插件管理 - " + siteName;
+        break;
+    }
+    document.title = title;
+  }, [activeTab, siteName]);
+
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     setIsAuthenticated(false);

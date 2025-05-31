@@ -60,6 +60,37 @@ export default function Posts() {
     setEditingPostId(-1); // 使用 -1 表示新增文章
   };
 
+  const handleDeletePost = async (postId: number) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('未登录或登录已过期，请重新登录');
+        return;
+      }
+      const res = await fetch(`${getApiBaseUrl()}/api/bdmin/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          alert('登录已过期，请重新登录');
+          localStorage.removeItem('auth_token');
+          window.location.href = '/bdmin/login';
+        } else {
+          throw new Error('网络请求失败');
+        }
+      } else {
+        setRefreshKey(prevKey => prevKey + 1);
+        alert('文章已成功删除');
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('删除文章失败，请稍后再试');
+    }
+  };
+
   if (editingPostId !== null) {
     return (
       <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
@@ -104,7 +135,11 @@ export default function Posts() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.created_at}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <button onClick={() => setEditingPostId(post.id)} className="text-indigo-600 hover:text-indigo-900">编辑</button>
-                  <button className="ml-2 text-red-600 hover:text-red-900">删除</button>
+                  <button onClick={() => {
+                    if (confirm('您确定要删除这篇文章吗？此操作无法撤销。')) {
+                      handleDeletePost(post.id);
+                    }
+                  }} className="ml-2 text-red-600 hover:text-red-900">删除</button>
                 </td>
               </tr>
             ))}

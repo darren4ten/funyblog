@@ -138,6 +138,22 @@ app.post('/api/bdmin/posts', async (c: Context<{ Bindings: Bindings }>) => {
   return c.json(result)
 })
 
+// 删除文章 (for admin)
+app.delete('/api/bdmin/posts/:id', async (c: Context<{ Bindings: Bindings }>) => {
+  const { id } = c.req.param()
+  try {
+    const post = await getPostById(c.env.DB, parseInt(id))
+    if (!post) {
+      return c.json({ error: 'Post not found' }, 404)
+    }
+    await c.env.DB.prepare(`DELETE FROM posts WHERE id = ?`).bind(id).run()
+    return c.json({ message: 'Post deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting post:', error)
+    return c.json({ error: 'Failed to delete post' }, 500)
+  }
+})
+
 // 获取评论
 app.get('/api/posts/:slug/comments', async (c: Context<{ Bindings: Bindings }>) => {
   const { slug } = c.req.param()

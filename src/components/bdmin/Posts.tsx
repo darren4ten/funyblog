@@ -80,7 +80,11 @@ export default function Posts() {
             {posts.map((post) => (
               <tr key={post.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{post.title}</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    <Link href={`/posts/${post.slug}`} className="text-indigo-600 hover:text-indigo-900">
+                      {post.title}
+                    </Link>
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.author_name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.category}</td>

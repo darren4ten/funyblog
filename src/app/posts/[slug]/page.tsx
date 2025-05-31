@@ -1,3 +1,5 @@
+"use client";
+
 import { ApiBaseUrl, getApiBaseUrl } from '../../../lib/env';
 import Image from 'next/image'
 import Link from 'next/link'
@@ -5,6 +7,7 @@ import { FaEye, FaHeart, FaComment, FaUser, FaCalendarAlt } from 'react-icons/fa
 import Banner from '@/components/Banner'
 import CommentSection from '@/components/CommentSection'
 import Sidebar from '@/components/Sidebar'
+import { useState, useEffect } from 'react'
 
 interface PostPageProps {
   params: {
@@ -12,45 +15,76 @@ interface PostPageProps {
   }
 }
 
-export default async function PostPage({ params }: PostPageProps) {
-  const getPost = async (slug: string): Promise<any> => {
-    try {
+export default function PostPage({ params }: PostPageProps) {
+  const { slug } = params;
+  const [post, setPost] = useState<any>(null);
+  const [comments, setComments] = useState<any[]>([]);
+  const [liked, setLiked] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // 获取文章数据
       const res = await fetch(`${getApiBaseUrl()}/api/posts/${slug}`);
-      if (!res.ok) throw new Error('网络请求失败');
-      const data = await res.json() as Record<string, any>;
-      console.log('Fetched post data:', data); // 调试信息
-      return data;
-    } catch (error) {
-      console.error('Error fetching post:', error);
-      return {
-        title: "Hello world!",
-        content: "Welcome to WordPress. This is your first post. Edit or delete it, then start writing!",
-        created_at: "18 5 月, 2025",
-        views: 12,
-        likes: 2,
-        author: "admin",
-        category: "Uncategorized",
-        tags: ["暂无"],
-        updated_at: "18 5 月, 2025"
-      };
-    }
-  };
+      if (!res.ok) {
+        console.error('Error fetching post');
+        return;
+      }
+      const postData = await res.json() as any;
+      setPost(postData);
+      setLikes(postData.likes || 0);
 
-  const getComments = async (slug: string): Promise<any> => {
+      // 获取评论数据
+      const commentsRes = await fetch(`${getApiBaseUrl()}/api/posts/${slug}/comments`);
+      const commentsData = commentsRes.ok ? await commentsRes.json() as any : { results: [] };
+      setComments(commentsData.results || []);
+
+      // 检查是否已点赞
+      const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
+      setLiked(!!likedPosts[slug]);
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [slug]);
+
+  const handleLike = async () => {
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
+    const isLiked = !!likedPosts[slug];
+
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/posts/${slug}/comments`);
-      if (!res.ok) throw new Error('网络请求失败');
-      const data = await res.json() as Record<string, any>;
-      console.log('Fetched comments data:', data); // 调试信息
-      return data.results || [];
+      const res = await fetch(`${getApiBaseUrl()}/api/posts/${slug}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isLiked })
+      });
+
+      if (!res.ok) {
+        throw new Error('点赞失败');
+      }
+
+      if (isLiked) {
+        likedPosts[slug] = false;
+        setLikes(likes - 1);
+      } else {
+        likedPosts[slug] = true;
+        setLikes(likes + 1);
+      }
+      setLiked(!isLiked);
+      localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
     } catch (error) {
-      console.error('Error fetching comments:', error);
-      return [];
+      console.error('点赞错误:', error);
+      alert('点赞失败，请稍后再试');
     }
   };
 
-  const post = await getPost(params.slug);
-  const comments = await getComments(params.slug);
+  if (loading) {
+    return <div className="min-h-screen bg-gray-100">加载中...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -90,13 +124,13 @@ export default async function PostPage({ params }: PostPageProps) {
                   <FaEye className="text-gray-400" />
                   <span>{post.views !== undefined ? post.views : 0} 浏览</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <FaHeart className="text-gray-400" />
-                  <span>{post.likes !== undefined ? post.likes : 0} 点赞</span>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={handleLike}>
+                  <FaHeart className={liked ? 'text-red-500' : 'text-gray-400'} />
+                  <span>{likes} 点赞</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FaComment className="text-gray-400" />
-                  <span>{comments !== undefined ? comments.length : 0} 评论</span>
+                  <span>{comments.length} 评论</span>
                 </div>
               </div>
               <div className="aspect-[21/9] relative mb-8">
@@ -136,7 +170,7 @@ export default async function PostPage({ params }: PostPageProps) {
             </div>
 
             {/* 评论区 */}
-            <CommentSection comments={comments} postSlug={params.slug} />
+            <CommentSection comments={comments} postSlug={slug} />
           </article>
           <div className="lg:w-[320px] flex-shrink-0">
             <Sidebar />
@@ -145,4 +179,4 @@ export default async function PostPage({ params }: PostPageProps) {
       </div>
     </div>
   )
-} 
+}

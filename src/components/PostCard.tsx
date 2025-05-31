@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { FaEye, FaHeart, FaComment, FaUser } from 'react-icons/fa'
+import { useState, useEffect } from 'react'
+import { getApiBaseUrl } from '../lib/env'
 
 interface PostCardProps {
   title: string
@@ -29,6 +31,46 @@ export default function PostCard({
   categorySlug,
   slug,
 }: PostCardProps) {
+  const [liked, setLiked] = useState(false)
+  const [currentLikes, setCurrentLikes] = useState(likes)
+
+  useEffect(() => {
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}')
+    setLiked(!!likedPosts[slug])
+  }, [slug])
+
+  const handleLike = async () => {
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}')
+    const isLiked = !!likedPosts[slug]
+
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/posts/${slug}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isLiked })
+      })
+
+      if (!res.ok) {
+        throw new Error('点赞失败')
+      }
+
+      if (isLiked) {
+        likedPosts[slug] = false
+        setCurrentLikes(currentLikes - 1)
+      } else {
+        likedPosts[slug] = true
+        setCurrentLikes(currentLikes + 1)
+      }
+      setLiked(!isLiked)
+      localStorage.setItem('likedPosts', JSON.stringify(likedPosts))
+    } catch (error) {
+      console.error('点赞错误:', error)
+      alert('点赞失败，请稍后再试')
+    }
+  }
+
   return (
     <article className="bg-white rounded-lg overflow-hidden flex">
       <div className="w-64 relative bg-gray-200">
@@ -41,7 +83,7 @@ export default function PostCard({
       </div>
       <div className="flex-1 p-6">
         <div className="flex flex-col h-full">
-          <Link 
+          <Link
             href={`/category/${categorySlug || category.toLowerCase()}`}
             className="bg-blue-500 text-white text-sm px-4 py-1 rounded-full self-start mb-3 hover:bg-blue-600 transition-colors"
           >
@@ -71,9 +113,9 @@ export default function PostCard({
                 <FaEye className="text-gray-400" />
                 <span>{views}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <FaHeart className="text-gray-400" />
-                <span>{likes}</span>
+              <div className="flex items-center gap-1 cursor-pointer" onClick={handleLike}>
+                <FaHeart className={liked ? 'text-red-500' : 'text-gray-400'} />
+                <span>{currentLikes}</span>
               </div>
               <div className="flex items-center gap-1">
                 <FaComment className="text-gray-400" />
@@ -85,4 +127,4 @@ export default function PostCard({
       </div>
     </article>
   )
-} 
+}

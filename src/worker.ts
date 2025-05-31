@@ -182,10 +182,11 @@ app.get('/api/search', async (c: Context<{ Bindings: Bindings }>) => {
   return c.json(posts)
 })
 
-// 点赞文章
+// 点赞或取消点赞文章
 app.post('/api/posts/:slug/like', async (c: Context<{ Bindings: Bindings }>) => {
   const { slug } = c.req.param()
-  const result = await likePost(c.env.DB, slug)
+  const { isLiked } = await c.req.json()
+  const result = await likePost(c.env.DB, slug, isLiked)
   return c.json(result)
 })
 

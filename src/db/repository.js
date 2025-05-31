@@ -184,16 +184,20 @@ export async function searchPosts(db, query, limit = 5) {
 }
 
 /**
- * 点赞文章
+ * 点赞或取消点赞文章
  * @param {D1Database} db - D1 数据库实例
  * @param {string} slug - 文章 slug
+ * @param {boolean} isLiked - 是否已点赞
  * @returns {Promise<Object>} 操作结果
  */
-export async function likePost(db, slug) {
-  await db.prepare(`
+export async function likePost(db, slug, isLiked) {
+  const query = isLiked ? `
+    UPDATE posts SET likes = likes - 1 WHERE slug = ?
+  ` : `
     UPDATE posts SET likes = likes + 1 WHERE slug = ?
-  `).bind(slug).run();
-  return { message: 'Post liked successfully' };
+  `;
+  await db.prepare(query).bind(slug).run();
+  return { message: isLiked ? 'Post unliked successfully' : 'Post liked successfully' };
 }
 
 /**

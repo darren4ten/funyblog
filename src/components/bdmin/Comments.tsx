@@ -105,7 +105,7 @@ export default function Comments() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{comment.author_name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <Link href={`/posts/${comment.post_slug}#comments`} className="text-indigo-600 hover:text-indigo-900">
+                  <Link href={`/posts/${comment.post_slug}#comment-${comment.id}`} className="text-indigo-600 hover:text-indigo-900">
                     {comment.post_title && comment.post_title.length > 16
                       ? `${comment.post_title.substring(0, 16)}...`
                       : comment.post_title}

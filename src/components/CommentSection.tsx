@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaComment } from 'react-icons/fa'
 import Link from 'next/link'
 import { getApiBaseUrl } from '../lib/env';
@@ -16,6 +16,31 @@ export default function CommentSection({ comments, postSlug }: CommentSectionPro
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [error, setError] = useState('');
+  const commentRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      // 支持多种格式的锚点，如 #comment-10 或直接 #10
+      const match = hash.match(/#(?:comment-)?(\d+)/);
+      if (match && match[1]) {
+        const commentId = parseInt(match[1], 10);
+        if (!isNaN(commentId)) {
+          setTimeout(() => {
+            const commentElement = commentRefs.current[commentId];
+            if (commentElement) {
+              commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // 可选：高亮评论以便用户更容易找到
+              commentElement.style.backgroundColor = '#fff3cd';
+              setTimeout(() => {
+                commentElement.style.backgroundColor = '';
+              }, 3000);
+            }
+          }, 500); // 延迟以确保评论加载完成
+        }
+      }
+    }
+  }, [comments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +102,12 @@ export default function CommentSection({ comments, postSlug }: CommentSectionPro
       <div className="space-y-6">
         {comments && comments.length > 0 ? (
           comments.map((comment: any, index: number) => (
-            <div key={index} className="flex gap-4">
+            <div
+              key={index}
+              id={`comment-${comment.id}`}
+              ref={(el) => { commentRefs.current[comment.id] = el; }}
+              className="flex gap-4"
+            >
               <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0" />
               <div className="flex-1">
                 <div className="bg-gray-50 rounded-lg p-4">

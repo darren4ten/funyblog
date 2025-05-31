@@ -10,7 +10,12 @@ export default function Posts() {
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(() => {
+    const savedPageSize = localStorage.getItem('postsPerPage');
+    return savedPageSize ? parseInt(savedPageSize, 10) : 10;
+  });
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const router = useRouter();
 
@@ -21,19 +26,26 @@ export default function Posts() {
 
   useEffect(() => {
     fetchPosts();
-  }, [currentPage, refreshKey]);
+  }, [currentPage, pageSize, refreshKey]);
+
+  useEffect(() => {
+    localStorage.setItem('postsPerPage', pageSize.toString());
+  }, [pageSize]);
 
   const fetchPosts = async () => {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/posts?page=${currentPage}&limit=10`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/posts?page=${currentPage}&limit=${pageSize}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       if (!res.ok) throw new Error('网络请求失败');
       const data = await res.json() as { results: any[], total: number };
-      setPosts(data.results || []);
-      setTotalPages(Math.ceil(data.total / 10));
+      console.log("API Data:", data); // 调试信息
+      const fetchedPosts = Array.isArray(data.results) ? data.results : [];
+      setPosts(fetchedPosts);
+      setTotalPages(Math.ceil(data.total / pageSize));
+      setTotalCount(data.total || 0);
     } catch (error) {
       console.error('Error fetching posts:', error);
       setPosts([]);
@@ -63,6 +75,7 @@ export default function Posts() {
         <button onClick={handleAddPost} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
           新增文章
         </button>
+        <div className="text-sm text-gray-500">总文章数: {totalCount}</div>
       </div>
 
       <div className="shadow overflow-hidden sm:rounded-md">
@@ -100,29 +113,52 @@ export default function Posts() {
       </div>
 
       <div className="mt-4 flex justify-center">
+        <div className="mr-4 relative inline-flex items-center">
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1); // 重置到第一页
+            }}
+            className="px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 rounded-md"
+          >
+            <option value={5}>5 每页</option>
+            <option value={10}>10 每页</option>
+            <option value={20}>20 每页</option>
+            <option value={50}>50 每页</option>
+          </select>
+        </div>
         <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
           <button
-            onClick={() => handlePageChange(currentPage - 1)}
+            onClick={() => handlePageChange(1)}
             disabled={currentPage === 1}
             className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
           >
+            首页
+          </button>
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+          >
             上一页
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-            <button
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${currentPage === page ? 'text-indigo-600' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
-              {page}
-            </button>
-          ))}
+          <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+            {currentPage}
+          </span>
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
           >
             下一页
+          </button>
+          <button
+            onClick={() => handlePageChange(totalPages)}
+            disabled={currentPage === totalPages}
+            className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+          >
+            最后一页
           </button>
         </nav>
       </div>

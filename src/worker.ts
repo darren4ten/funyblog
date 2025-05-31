@@ -87,8 +87,16 @@ app.use('*', cors({
 // 获取文章列表
 app.get('/api/posts', async (c: Context<{ Bindings: Bindings }>) => {
   const { page = '1', limit = '10' } = c.req.query()
-  const posts = await getPosts(c.env.DB, parseInt(page), parseInt(limit))
-  return c.json(posts)
+  const postsData = await getPosts(c.env.DB, parseInt(page), parseInt(limit))
+  const totalCount = await c.env.DB.prepare(`SELECT COUNT(*) as total FROM posts WHERE status = 'published'`).first()
+  const total = totalCount ? totalCount.total : 0
+  let results: any[] = [];
+  if (Array.isArray(postsData)) {
+    results = postsData;
+  } else if (postsData && typeof postsData === 'object' && 'results' in postsData && Array.isArray((postsData as any).results)) {
+    results = (postsData as any).results;
+  }
+  return c.json({ results, total })
 })
 
 // 获取文章详情

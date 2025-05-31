@@ -179,8 +179,12 @@ export default function ConsolePage() {
       {/* 顶部导航栏 */}
       <header className="bg-white shadow w-full">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{siteName} 管理后台</h1>
+          <div className="text-left">
+            <h1 className="text-3xl font-bold text-gray-900">
+              <Link href="/" className="hover:text-indigo-700 transition-colors">
+                {siteName} 管理后台
+              </Link>
+            </h1>
             <p className="mt-1 text-sm text-gray-500">欢迎, {currentUser}</p>
           </div>
           <button onClick={handleLogout} className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
